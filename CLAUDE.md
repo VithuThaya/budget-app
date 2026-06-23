@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working practices (standing instructions from the user)
+
+- **Persist important changes to memory.** Whenever something non-obvious changes — a feature, an architectural decision, a Supabase dashboard setting, a new convention — record it in the project memory (`MEMORY.md` + a memory file) so the next session has full context. Dashboard/backend settings are especially important because they are not visible in the repo.
+- **Push to git after every change.** Once a change is made and verified (build/app working), commit it and `git push` to `main` — do not leave finished work uncommitted. Pushing to `main` auto-deploys to GitHub Pages.
+
 ## Commands
 
 ```bash
