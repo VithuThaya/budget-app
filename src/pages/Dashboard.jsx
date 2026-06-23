@@ -1,0 +1,184 @@
+import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  Wallet, TrendingDown, TrendingUp, CalendarDays, ArrowRight, Sparkles, Target,
+} from 'lucide-react'
+import { useData } from '../store/DataContext'
+import { iconFor } from '../lib/categoryMeta'
+import {
+  monthSpend, weekSpend, monthIncome, spendByCategory,
+} from '../logic/selectors'
+import { generateAlerts } from '../logic/advisor'
+import { weeklyTotals, formatMonthLabel } from '../lib/dates'
+import StatCard from '../components/StatCard'
+import AlertBanner from '../components/AlertBanner'
+import ProgressBar from '../components/ProgressBar'
+import WeeklyBars from '../components/charts/WeeklyBars'
+import TransactionCard from '../components/TransactionCard'
+import EmptyState from '../components/EmptyState'
+import Money from '../components/Money'
+
+export default function Dashboard() {
+  const { expenses, incomes, categories, budgets, categoryMap, deleteExpense, loading } = useData()
+
+  const spentMonth = useMemo(() => monthSpend(expenses), [expenses])
+  const spentWeek = useMemo(() => weekSpend(expenses), [expenses])
+  const incomeMonth = useMemo(() => monthIncome(incomes), [incomes])
+  const net = incomeMonth - spentMonth
+
+  const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
+  const weekTrend = useMemo(() => {
+    const prev = weekly[weekly.length - 2]?.total || 0
+    const cur = weekly[weekly.length - 1]?.total || 0
+    if (prev === 0) return null
+    const pct = Math.round(((cur - prev) / prev) * 100)
+    return { dir: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat', label: `${Math.abs(pct)}% vs last wk` }
+  }, [weekly])
+
+  const alerts = useMemo(
+    () => generateAlerts({ expenses, budgets, categoryMap }),
+    [expenses, budgets, categoryMap],
+  )
+
+  const budgetStatus = useMemo(() => {
+    const spent = spendByCategory(expenses, { monthOnly: true })
+    return budgets
+      .map((b) => {
+        const cat = categoryMap.get(b.category_id)
+        if (!cat) return null
+        const used = spent.get(b.category_id) || 0
+        return { cat, budget: Number(b.amount), used, ratio: b.amount > 0 ? used / b.amount : 0 }
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.ratio - a.ratio)
+      .slice(0, 5)
+  }, [budgets, expenses, categoryMap])
+
+  const recent = useMemo(
+    () => [...expenses].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 6),
+    [expenses],
+  )
+
+  if (loading) return <DashboardSkeleton />
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-[1.65rem]">Dashboard</h1>
+        <p className="mt-1 text-sm text-zinc-400">{formatMonthLabel()} overview</p>
+      </div>
+
+      {/* Stat row */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <StatCard label="Spent this month" value={spentMonth} icon={TrendingDown} accent="#ef4444" />
+        <StatCard label="This week" value={spentWeek} icon={CalendarDays} accent="#f59e0b" trend={weekTrend} />
+        <StatCard label="Income this month" value={incomeMonth} icon={TrendingUp} accent="#22c55e" />
+        <StatCard label={net >= 0 ? 'Net saved' : 'Net deficit'} value={net} icon={Wallet} accent="#2563eb" />
+      </div>
+
+      {/* Advisor + weekly */}
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <section className="card p-5 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+              <CalendarDays className="h-[18px] w-[18px] text-accent-soft" /> Weekly spending
+            </h2>
+            <Link to="/reports" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">View reports</Link>
+          </div>
+          <WeeklyBars data={weekly} height={220} />
+        </section>
+
+        <section className="card p-5">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+            <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Spending Advisor
+          </h2>
+          <div className="space-y-2.5">
+            {alerts.slice(0, 4).map((a) => (
+              <AlertBanner key={a.id} level={a.level} title={a.title} detail={a.detail} />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* Budget status + recent */}
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+              <Target className="h-[18px] w-[18px] text-accent-soft" /> Budget status
+            </h2>
+            <Link to="/budgets" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">Manage</Link>
+          </div>
+          {budgetStatus.length === 0 ? (
+            <EmptyState icon={Target} title="No budgets set"
+              message="Set monthly limits to track your progress."
+              actionTo="/budgets" actionLabel="Set budgets" />
+          ) : (
+            <div className="space-y-4">
+              {budgetStatus.map(({ cat, budget, used, ratio }) => {
+                const Icon = iconFor(cat.icon)
+                return (
+                  <div key={cat.id}>
+                    <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
+                      <span className="flex items-center gap-2 text-zinc-200">
+                        <Icon className="h-4 w-4" style={{ color: cat.color }} /> {cat.name}
+                      </span>
+                      <span className="tabular-nums text-zinc-400">
+                        <Money value={used} /> / <Money value={budget} />
+                      </span>
+                    </div>
+                    <ProgressBar ratio={ratio} />
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold text-zinc-100">Recent transactions</h2>
+            <Link to="/expenses" className="flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {recent.length === 0 ? (
+            <EmptyState title="No expenses yet" message="Add your first expense to see it here."
+              actionTo="/expenses/add" actionLabel="Add expense" />
+          ) : (
+            <div className="space-y-2">
+              {recent.map((e) => (
+                <TransactionCard
+                  key={e.id}
+                  title={e.notes}
+                  amount={e.amount}
+                  date={e.date}
+                  category={categoryMap.get(e.category_id)}
+                  recurring={e.recurring}
+                  recurInterval={e.recur_interval}
+                  editTo={`/expenses/${e.id}/edit`}
+                  onDelete={() => window.confirm('Delete this expense?') && deleteExpense(e.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="mb-6 h-8 w-48 rounded-lg bg-ink-800" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-2xl bg-ink-800" />)}
+      </div>
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="h-72 rounded-2xl bg-ink-800 lg:col-span-2" />
+        <div className="h-72 rounded-2xl bg-ink-800" />
+      </div>
+    </div>
+  )
+}

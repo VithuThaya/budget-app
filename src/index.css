@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #09090b;
+  color: #fafafa;
+  font-family: '"IBM Plex Sans"', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle ambient gradient behind the app */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60rem 40rem at 100% -10%, rgba(37, 99, 235, 0.10), transparent 60%),
+    radial-gradient(50rem 40rem at -10% 110%, rgba(37, 99, 235, 0.06), transparent 55%);
+  pointer-events: none;
+}
+
+@layer base {
+  *:focus-visible {
+    outline: 2px solid theme('colors.accent.soft');
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-ink-700 bg-ink-850/80 shadow-card backdrop-blur-sm;
+  }
+  .stat-label {
+    @apply text-xs font-medium uppercase tracking-wider text-zinc-400;
+  }
+  .input {
+    @apply w-full rounded-xl border border-ink-700 bg-ink-900 px-3.5 py-2.5 text-sm text-zinc-100
+      placeholder:text-zinc-500 transition-colors duration-200
+      focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-accent/50;
+  }
+  .btn-ghost {
+    @apply btn border border-ink-700 bg-ink-800 text-zinc-200 hover:bg-ink-700;
+  }
+  .btn-danger {
+    @apply btn border border-bad/30 bg-bad/10 text-red-300 hover:bg-bad/20;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Slim scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 999px;
+}

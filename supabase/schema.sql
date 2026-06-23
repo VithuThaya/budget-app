@@ -1,0 +1,107 @@
+-- ============================================================================
+-- Budget App — Supabase schema
+-- Paste this whole file into Supabase: SQL Editor -> New query -> Run.
+-- It creates the tables and Row Level Security so every user only ever sees
+-- and edits their own rows. Safe to re-run (uses IF NOT EXISTS / OR REPLACE).
+-- ============================================================================
+
+-- Needed for gen_random_uuid()
+create extension if not exists pgcrypto;
+
+-- ---------------------------------------------------------------------------
+-- Tables
+-- ---------------------------------------------------------------------------
+create table if not exists public.categories (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name        text not null,
+  icon        text not null default 'Tag',
+  color       text not null default '#2563eb',
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.budgets (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  category_id uuid references public.categories (id) on delete cascade,
+  amount      numeric(12, 2) not null default 0,
+  period      text not null default 'monthly',
+  created_at  timestamptz not null default now(),
+  unique (user_id, category_id)
+);
+
+create table if not exists public.incomes (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  source         text not null,
+  amount         numeric(12, 2) not null default 0,
+  date           date not null default current_date,
+  recurring      boolean not null default false,
+  recur_interval text,                         -- 'weekly' | 'monthly' | null
+  notes          text,
+  created_at     timestamptz not null default now()
+);
+
+create table if not exists public.expenses (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  amount         numeric(12, 2) not null default 0,
+  category_id    uuid references public.categories (id) on delete set null,
+  date           date not null default current_date,
+  notes          text,
+  recurring      boolean not null default false,
+  recur_interval text,                         -- 'weekly' | 'monthly' | null
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists expenses_user_date_idx on public.expenses (user_id, date desc);
+create index if not exists incomes_user_date_idx  on public.incomes (user_id, date desc);
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security: each user can only touch their own rows
+-- ---------------------------------------------------------------------------
+alter table public.categories enable row level security;
+alter table public.budgets    enable row level security;
+alter table public.incomes    enable row level security;
+alter table public.expenses   enable row level security;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['categories', 'budgets', 'incomes', 'expenses']
+  loop
+    execute format('drop policy if exists "own_select" on public.%I;', t);
+    execute format('drop policy if exists "own_insert" on public.%I;', t);
+    execute format('drop policy if exists "own_update" on public.%I;', t);
+    execute format('drop policy if exists "own_delete" on public.%I;', t);
+
+    execute format('create policy "own_select" on public.%I for select using (auth.uid() = user_id);', t);
+    execute format('create policy "own_insert" on public.%I for insert with check (auth.uid() = user_id);', t);
+    execute format('create policy "own_update" on public.%I for update using (auth.uid() = user_id) with check (auth.uid() = user_id);', t);
+    execute format('create policy "own_delete" on public.%I for delete using (auth.uid() = user_id);', t);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- Realtime: broadcast changes so a second device updates instantly
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  alter publication supabase_realtime add table public.expenses;
+exception when others then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.incomes;
+exception when others then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.budgets;
+exception when others then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.categories;
+exception when others then null;
+end $$;
