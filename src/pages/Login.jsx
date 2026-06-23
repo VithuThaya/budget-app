@@ -69,7 +69,7 @@ export default function Login() {
           <div>
             <label htmlFor="password" className="label">Password</label>
             <input
-              id="password" type="password" required minLength={6}
+              id="password" type="password" required minLength={8}
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
               value={password} onChange={(e) => setPassword(e.target.value)}
               className="input" placeholder="••••••••"
