@@ -9,6 +9,7 @@ import { iconFor } from '../lib/categoryMeta'
 import {
   monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal,
 } from '../logic/selectors'
+import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
 import { weeklyTotals, formatMonthLabel } from '../lib/dates'
 import StatCard from '../components/StatCard'
@@ -20,14 +21,18 @@ import EmptyState from '../components/EmptyState'
 import Money from '../components/Money'
 
 export default function Dashboard() {
-  const { expenses, incomes, fixedCosts, categories, budgets, categoryMap, deleteExpense, loading } = useData()
+  const {
+    expenses, incomes, fixedCosts, savingsContributions,
+    categories, budgets, categoryMap, deleteExpense, loading,
+  } = useData()
 
   const spentMonth = useMemo(() => monthSpend(expenses), [expenses])
   const spentWeek = useMemo(() => weekSpend(expenses), [expenses])
   const incomeMonth = useMemo(() => monthIncome(incomes), [incomes])
   const fixedMonth = useMemo(() => monthlyFixedTotal(fixedCosts), [fixedCosts])
+  const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
   const available = incomeMonth - fixedMonth
-  const leftToSpend = available - spentMonth
+  const leftToSpend = available - spentMonth - savedMonth
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
   const weekTrend = useMemo(() => {
@@ -95,6 +100,7 @@ export default function Dashboard() {
             <Money value={available} className="text-base font-semibold" />
           </div>
           <BreakdownRow label="Spent this month" value={-spentMonth} tone="neg" />
+          {savedMonth > 0 && <BreakdownRow label="Saved this month" value={-savedMonth} tone="neg" linkTo="/savings" />}
           <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
             <span className="text-zinc-100">Left to spend</span>
             <Money value={leftToSpend} className={`text-lg font-bold ${leftToSpend >= 0 ? 'text-green-400' : 'text-red-300'}`} />

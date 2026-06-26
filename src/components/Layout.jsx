@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, ReceiptText, Plus, TrendingUp, Tags, Target,
-  BarChart3, Wallet, LogOut, Menu, X, CalendarClock,
+  BarChart3, Wallet, LogOut, Menu, X, CalendarClock, PiggyBank,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
@@ -11,6 +11,7 @@ const NAV = [
   { to: '/expenses', label: 'Expenses', icon: ReceiptText },
   { to: '/incomes', label: 'Incomes', icon: TrendingUp },
   { to: '/fixed-costs', label: 'Fixed costs', icon: CalendarClock },
+  { to: '/savings', label: 'Savings', icon: PiggyBank },
   { to: '/budgets', label: 'Budgets', icon: Target },
   { to: '/categories', label: 'Categories', icon: Tags },
   { to: '/reports', label: 'Reports', icon: BarChart3 },

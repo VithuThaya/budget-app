@@ -15,7 +15,7 @@ import { DEFAULT_CATEGORIES } from '../lib/categoryMeta'
 const DataContext = createContext(null)
 export const useData = () => useContext(DataContext)
 
-const TABLES = ['categories', 'budgets', 'incomes', 'expenses', 'fixed_costs']
+const TABLES = ['categories', 'budgets', 'incomes', 'expenses', 'fixed_costs', 'savings_goals', 'savings_contributions']
 
 export function DataProvider({ session, children }) {
   const userId = session?.user?.id
@@ -24,6 +24,8 @@ export function DataProvider({ session, children }) {
   const [incomes, setIncomes] = useState([])
   const [expenses, setExpenses] = useState([])
   const [fixedCosts, setFixedCosts] = useState([])
+  const [savingsGoals, setSavingsGoals] = useState([])
+  const [savingsContributions, setSavingsContributions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const seededRef = useRef(false)
@@ -35,6 +37,8 @@ export function DataProvider({ session, children }) {
       incomes: setIncomes,
       expenses: setExpenses,
       fixed_costs: setFixedCosts,
+      savings_goals: setSavingsGoals,
+      savings_contributions: setSavingsContributions,
     }),
     [],
   )
@@ -45,14 +49,16 @@ export function DataProvider({ session, children }) {
     setLoading(true)
     setError(null)
     try {
-      const [cats, buds, incs, exps, fixs] = await Promise.all([
+      const [cats, buds, incs, exps, fixs, goals, contribs] = await Promise.all([
         supabase.from('categories').select('*').order('created_at', { ascending: true }),
         supabase.from('budgets').select('*'),
         supabase.from('incomes').select('*').order('date', { ascending: false }),
         supabase.from('expenses').select('*').order('date', { ascending: false }),
         supabase.from('fixed_costs').select('*').order('created_at', { ascending: true }),
+        supabase.from('savings_goals').select('*').order('created_at', { ascending: true }),
+        supabase.from('savings_contributions').select('*').order('date', { ascending: false }),
       ])
-      for (const r of [cats, buds, incs, exps, fixs]) if (r.error) throw r.error
+      for (const r of [cats, buds, incs, exps, fixs, goals, contribs]) if (r.error) throw r.error
 
       let categoryRows = cats.data || []
       // Seed default categories once for brand-new accounts.
@@ -70,6 +76,8 @@ export function DataProvider({ session, children }) {
       setIncomes(incs.data || [])
       setExpenses(exps.data || [])
       setFixedCosts(fixs.data || [])
+      setSavingsGoals(goals.data || [])
+      setSavingsContributions(contribs.data || [])
     } catch (e) {
       setError(e.message || 'Failed to load data')
     } finally {
@@ -162,6 +170,13 @@ export function DataProvider({ session, children }) {
   const updateFixedCost = useCallback((id, v) => update('fixed_costs', id, v), [update])
   const deleteFixedCost = useCallback((id) => remove('fixed_costs', id), [remove])
 
+  const addSavingsGoal = useCallback((v) => create('savings_goals', v), [create])
+  const updateSavingsGoal = useCallback((id, v) => update('savings_goals', id, v), [update])
+  const deleteSavingsGoal = useCallback((id) => remove('savings_goals', id), [remove])
+
+  const addContribution = useCallback((v) => create('savings_contributions', v), [create])
+  const deleteContribution = useCallback((id) => remove('savings_contributions', id), [remove])
+
   const addCategory = useCallback((v) => create('categories', v), [create])
   const updateCategory = useCallback((id, v) => update('categories', id, v), [update])
   const deleteCategory = useCallback((id) => remove('categories', id), [remove])
@@ -186,11 +201,14 @@ export function DataProvider({ session, children }) {
 
   const value = {
     loading, error, isConfigured,
-    categories, budgets, incomes, expenses, fixedCosts, categoryMap,
+    categories, budgets, incomes, expenses, fixedCosts,
+    savingsGoals, savingsContributions, categoryMap,
     reload: loadAll,
     addExpense, updateExpense, deleteExpense,
     addIncome, updateIncome, deleteIncome,
     addFixedCost, updateFixedCost, deleteFixedCost,
+    addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
+    addContribution, deleteContribution,
     addCategory, updateCategory, deleteCategory,
     setBudget, deleteBudget,
   }
