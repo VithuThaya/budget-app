@@ -2,11 +2,12 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Wallet, TrendingDown, TrendingUp, CalendarDays, ArrowRight, Sparkles, Target,
+  CalendarClock,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import {
-  monthSpend, weekSpend, monthIncome, spendByCategory,
+  monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal,
 } from '../logic/selectors'
 import { generateAlerts } from '../logic/advisor'
 import { weeklyTotals, formatMonthLabel } from '../lib/dates'
@@ -19,12 +20,14 @@ import EmptyState from '../components/EmptyState'
 import Money from '../components/Money'
 
 export default function Dashboard() {
-  const { expenses, incomes, categories, budgets, categoryMap, deleteExpense, loading } = useData()
+  const { expenses, incomes, fixedCosts, categories, budgets, categoryMap, deleteExpense, loading } = useData()
 
   const spentMonth = useMemo(() => monthSpend(expenses), [expenses])
   const spentWeek = useMemo(() => weekSpend(expenses), [expenses])
   const incomeMonth = useMemo(() => monthIncome(incomes), [incomes])
-  const net = incomeMonth - spentMonth
+  const fixedMonth = useMemo(() => monthlyFixedTotal(fixedCosts), [fixedCosts])
+  const available = incomeMonth - fixedMonth
+  const leftToSpend = available - spentMonth
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
   const weekTrend = useMemo(() => {
@@ -70,11 +73,39 @@ export default function Dashboard() {
 
       {/* Stat row */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Spent this month" value={spentMonth} icon={TrendingDown} accent="#ef4444" />
-        <StatCard label="This week" value={spentWeek} icon={CalendarDays} accent="#f59e0b" trend={weekTrend} />
         <StatCard label="Income this month" value={incomeMonth} icon={TrendingUp} accent="#22c55e" />
-        <StatCard label={net >= 0 ? 'Net saved' : 'Net deficit'} value={net} icon={Wallet} accent="#2563eb" />
+        <StatCard label="Fixed costs / mo" value={fixedMonth} icon={CalendarClock} accent="#f59e0b" />
+        <StatCard label="Spent this month" value={spentMonth} icon={TrendingDown} accent="#ef4444" />
+        <StatCard label={leftToSpend >= 0 ? 'Left to spend' : 'Over budget'} value={leftToSpend} icon={Wallet} accent="#2563eb" />
       </div>
+
+      {/* Available-to-spend breakdown */}
+      <section className="card mt-5 p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+            <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Available to spend
+          </h2>
+          <span className="text-xs text-zinc-500">{formatMonthLabel()}</span>
+        </div>
+        <div className="space-y-2.5 text-sm">
+          <BreakdownRow label="Income this month" value={incomeMonth} tone="pos" />
+          <BreakdownRow label="Fixed costs" value={-fixedMonth} tone="neg" linkTo="/fixed-costs" />
+          <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-medium text-zinc-100">
+            <span>Available</span>
+            <Money value={available} className="text-base font-semibold" />
+          </div>
+          <BreakdownRow label="Spent this month" value={-spentMonth} tone="neg" />
+          <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
+            <span className="text-zinc-100">Left to spend</span>
+            <Money value={leftToSpend} className={`text-lg font-bold ${leftToSpend >= 0 ? 'text-green-400' : 'text-red-300'}`} />
+          </div>
+        </div>
+        {incomeMonth === 0 && (
+          <p className="mt-3 text-xs text-zinc-500">
+            No income recorded this month yet — add income on the Incomes page for an accurate picture.
+          </p>
+        )}
+      </section>
 
       {/* Advisor + weekly */}
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -164,6 +195,20 @@ export default function Dashboard() {
           )}
         </section>
       </div>
+    </div>
+  )
+}
+
+function BreakdownRow({ label, value, tone, linkTo }) {
+  const color = tone === 'pos' ? 'text-green-400' : tone === 'neg' ? 'text-zinc-300' : 'text-zinc-300'
+  return (
+    <div className="flex items-center justify-between text-zinc-400">
+      {linkTo ? (
+        <Link to={linkTo} className="hover:text-accent-soft hover:underline cursor-pointer">{label}</Link>
+      ) : (
+        <span>{label}</span>
+      )}
+      <Money value={value} signed={value < 0} className={`tabular-nums ${color}`} />
     </div>
   )
 }

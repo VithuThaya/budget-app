@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import SetupNotice from './pages/SetupNotice'
 import Dashboard from './pages/Dashboard'
 import Incomes from './pages/Incomes'
+import FixedCosts from './pages/FixedCosts'
 import Expenses from './pages/Expenses'
 import AddExpense from './pages/AddExpense'
 import Categories from './pages/Categories'
@@ -52,6 +53,7 @@ export default function App() {
           <Route path="expenses/add" element={<AddExpense />} />
           <Route path="expenses/:id/edit" element={<AddExpense />} />
           <Route path="incomes" element={<Incomes />} />
+          <Route path="fixed-costs" element={<FixedCosts />} />
           <Route path="categories" element={<Categories />} />
           <Route path="budgets" element={<Budgets />} />
           <Route path="reports" element={<Reports />} />

@@ -54,21 +54,38 @@ create table if not exists public.expenses (
   created_at     timestamptz not null default now()
 );
 
+-- Fixed costs are a PLANNING layer: recurring obligations (rent, insurance,
+-- subscriptions) that are subtracted from income to show how much is left to
+-- spend. They are NOT expenses and are never double-counted against the
+-- expenses table. Each row's `amount` is normalised to a monthly value in the
+-- app via its `period`.
+create table if not exists public.fixed_costs (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name        text not null,
+  amount      numeric(12, 2) not null default 0,
+  period      text not null default 'monthly',  -- 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+  active      boolean not null default true,
+  notes       text,
+  created_at  timestamptz not null default now()
+);
+
 create index if not exists expenses_user_date_idx on public.expenses (user_id, date desc);
 create index if not exists incomes_user_date_idx  on public.incomes (user_id, date desc);
 
 -- ---------------------------------------------------------------------------
 -- Row Level Security: each user can only touch their own rows
 -- ---------------------------------------------------------------------------
-alter table public.categories enable row level security;
-alter table public.budgets    enable row level security;
-alter table public.incomes    enable row level security;
-alter table public.expenses   enable row level security;
+alter table public.categories  enable row level security;
+alter table public.budgets     enable row level security;
+alter table public.incomes     enable row level security;
+alter table public.expenses    enable row level security;
+alter table public.fixed_costs enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['categories', 'budgets', 'incomes', 'expenses']
+  foreach t in array array['categories', 'budgets', 'incomes', 'expenses', 'fixed_costs']
   loop
     execute format('drop policy if exists "own_select" on public.%I;', t);
     execute format('drop policy if exists "own_insert" on public.%I;', t);
@@ -103,5 +120,10 @@ end $$;
 do $$
 begin
   alter publication supabase_realtime add table public.categories;
+exception when others then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.fixed_costs;
 exception when others then null;
 end $$;

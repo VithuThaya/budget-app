@@ -65,3 +65,31 @@ export function currentWeekCategory(expenses, categoryId) {
 export function monthIncome(incomes) {
   return (incomes || []).filter((i) => isThisMonth(i.date)).reduce((a, i) => a + Number(i.amount), 0)
 }
+
+// --- Fixed costs (planning layer) -----------------------------------------
+// Fixed costs are recurring obligations stored with a period. To compare them
+// against monthly income we normalise every period to a single monthly value.
+export const PERIOD_TO_MONTHLY = {
+  weekly: 52 / 12, // ≈ 4.3333 weeks per month
+  monthly: 1,
+  quarterly: 1 / 3,
+  yearly: 1 / 12,
+}
+
+/** One fixed cost expressed as a monthly amount (CHF). */
+export function monthlyFixedCost(fc) {
+  const factor = PERIOD_TO_MONTHLY[fc.period] ?? 1
+  return Number(fc.amount) * factor
+}
+
+/** Sum of all ACTIVE fixed costs as a monthly amount. */
+export function monthlyFixedTotal(fixedCosts) {
+  return (fixedCosts || [])
+    .filter((fc) => fc.active !== false)
+    .reduce((a, fc) => a + monthlyFixedCost(fc), 0)
+}
+
+/** What's left of this month's income after fixed costs are subtracted. */
+export function availableToSpend(incomes, fixedCosts) {
+  return monthIncome(incomes) - monthlyFixedTotal(fixedCosts)
+}

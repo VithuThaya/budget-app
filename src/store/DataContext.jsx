@@ -15,7 +15,7 @@ import { DEFAULT_CATEGORIES } from '../lib/categoryMeta'
 const DataContext = createContext(null)
 export const useData = () => useContext(DataContext)
 
-const TABLES = ['categories', 'budgets', 'incomes', 'expenses']
+const TABLES = ['categories', 'budgets', 'incomes', 'expenses', 'fixed_costs']
 
 export function DataProvider({ session, children }) {
   const userId = session?.user?.id
@@ -23,12 +23,19 @@ export function DataProvider({ session, children }) {
   const [budgets, setBudgets] = useState([])
   const [incomes, setIncomes] = useState([])
   const [expenses, setExpenses] = useState([])
+  const [fixedCosts, setFixedCosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const seededRef = useRef(false)
 
   const setters = useMemo(
-    () => ({ categories: setCategories, budgets: setBudgets, incomes: setIncomes, expenses: setExpenses }),
+    () => ({
+      categories: setCategories,
+      budgets: setBudgets,
+      incomes: setIncomes,
+      expenses: setExpenses,
+      fixed_costs: setFixedCosts,
+    }),
     [],
   )
 
@@ -38,13 +45,14 @@ export function DataProvider({ session, children }) {
     setLoading(true)
     setError(null)
     try {
-      const [cats, buds, incs, exps] = await Promise.all([
+      const [cats, buds, incs, exps, fixs] = await Promise.all([
         supabase.from('categories').select('*').order('created_at', { ascending: true }),
         supabase.from('budgets').select('*'),
         supabase.from('incomes').select('*').order('date', { ascending: false }),
         supabase.from('expenses').select('*').order('date', { ascending: false }),
+        supabase.from('fixed_costs').select('*').order('created_at', { ascending: true }),
       ])
-      for (const r of [cats, buds, incs, exps]) if (r.error) throw r.error
+      for (const r of [cats, buds, incs, exps, fixs]) if (r.error) throw r.error
 
       let categoryRows = cats.data || []
       // Seed default categories once for brand-new accounts.
@@ -61,6 +69,7 @@ export function DataProvider({ session, children }) {
       setBudgets(buds.data || [])
       setIncomes(incs.data || [])
       setExpenses(exps.data || [])
+      setFixedCosts(fixs.data || [])
     } catch (e) {
       setError(e.message || 'Failed to load data')
     } finally {
@@ -149,6 +158,10 @@ export function DataProvider({ session, children }) {
   const updateIncome = useCallback((id, v) => update('incomes', id, v), [update])
   const deleteIncome = useCallback((id) => remove('incomes', id), [remove])
 
+  const addFixedCost = useCallback((v) => create('fixed_costs', v), [create])
+  const updateFixedCost = useCallback((id, v) => update('fixed_costs', id, v), [update])
+  const deleteFixedCost = useCallback((id) => remove('fixed_costs', id), [remove])
+
   const addCategory = useCallback((v) => create('categories', v), [create])
   const updateCategory = useCallback((id, v) => update('categories', id, v), [update])
   const deleteCategory = useCallback((id) => remove('categories', id), [remove])
@@ -173,10 +186,11 @@ export function DataProvider({ session, children }) {
 
   const value = {
     loading, error, isConfigured,
-    categories, budgets, incomes, expenses, categoryMap,
+    categories, budgets, incomes, expenses, fixedCosts, categoryMap,
     reload: loadAll,
     addExpense, updateExpense, deleteExpense,
     addIncome, updateIncome, deleteIncome,
+    addFixedCost, updateFixedCost, deleteFixedCost,
     addCategory, updateCategory, deleteCategory,
     setBudget, deleteBudget,
   }
