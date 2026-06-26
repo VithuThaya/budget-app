@@ -103,16 +103,22 @@ export default function Reports() {
               <span className="font-semibold text-green-300">{formatCHF(potential.totalSaving)}</span>{' '}
               ({formatPct(potential.pctOfSpend)} of your spend).
             </p>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {potential.items.map((it) => (
-                <div key={it.name} className="flex items-center gap-3">
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: it.color }} />
-                  <span className="w-28 shrink-0 truncate text-sm text-zinc-300">{it.name}</span>
-                  <div className="flex-1"><ProgressBar ratio={it.suggested / it.current} color={it.color} /></div>
-                  <span className="w-32 shrink-0 text-right text-xs text-zinc-400">
-                    <Money value={it.current} /> → <span className="text-zinc-200"><Money value={it.suggested} /></span>
-                  </span>
-                  <span className="w-20 shrink-0 text-right text-xs font-medium text-green-300">save <Money value={it.saving} /></span>
+                <div key={it.name}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: it.color }} />
+                      <span className="truncate text-sm text-zinc-300">{it.name}</span>
+                    </span>
+                    <span className="shrink-0 text-xs font-medium text-green-300">save <Money value={it.saving} /></span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <div className="flex-1"><ProgressBar ratio={it.suggested / it.current} color={it.color} /></div>
+                    <span className="shrink-0 text-xs tabular-nums text-zinc-400">
+                      <Money value={it.current} /> → <span className="text-zinc-200"><Money value={it.suggested} /></span>
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -185,12 +191,14 @@ function PlanCard({ title, plan }) {
           return (
             <div key={l.categoryId} className="flex items-center gap-2.5 text-sm">
               <Icon className="h-4 w-4 shrink-0" style={{ color: l.color }} />
-              <span className="w-24 shrink-0 truncate text-zinc-300">{l.name}</span>
-              <span className="flex-1 text-right text-xs text-zinc-500">
-                cap <span className="font-medium text-zinc-200"><Money value={l.cap} /></span>
-              </span>
-              <span className="w-24 shrink-0 text-right text-xs text-amber-300">
-                −{Math.round(l.reductionPct * 100)}% (<Money value={l.saving} />)
+              <span className="min-w-0 flex-1 truncate text-zinc-300">{l.name}</span>
+              <span className="shrink-0 text-right text-xs leading-tight">
+                <span className="block tabular-nums text-zinc-400">
+                  cap <span className="font-medium text-zinc-200"><Money value={l.cap} /></span>
+                </span>
+                <span className="block text-amber-300">
+                  −{Math.round(l.reductionPct * 100)}% (<Money value={l.saving} />)
+                </span>
               </span>
             </div>
           )

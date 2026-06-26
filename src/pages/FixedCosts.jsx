@@ -61,11 +61,11 @@ export default function FixedCosts() {
       <div className="mb-5 grid grid-cols-2 gap-3">
         <div className="card p-4">
           <span className="stat-label">Per month</span>
-          <div className="mt-1.5 text-2xl font-semibold text-amber-400"><Money value={monthlyTotal} /></div>
+          <div className="mt-1.5 truncate text-xl font-semibold text-amber-400 sm:text-2xl"><Money value={monthlyTotal} /></div>
         </div>
         <div className="card p-4">
           <span className="stat-label">Per year</span>
-          <div className="mt-1.5 text-2xl font-semibold text-zinc-100"><Money value={yearlyTotal} /></div>
+          <div className="mt-1.5 truncate text-xl font-semibold text-zinc-100 sm:text-2xl"><Money value={yearlyTotal} whole /></div>
         </div>
       </div>
 
@@ -126,24 +126,25 @@ export default function FixedCosts() {
             const showMonthly = fc.period !== 'monthly'
             return (
               <div key={fc.id}
-                className={`group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-850/60 px-3.5 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${inactive ? 'opacity-50' : ''}`}>
+                className={`flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-850/60 px-3.5 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${inactive ? 'opacity-50' : ''}`}>
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
                   <CalendarClock className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-baseline justify-between gap-2">
                     <p className="truncate text-sm font-medium text-zinc-100">{fc.name}</p>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-100">
+                      <Money value={fc.amount} /> <span className="text-xs font-normal text-zinc-500">/{shortFor(fc.period)}</span>
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
                     <span className="chip bg-accent/10 text-accent-soft">{fc.period}</span>
                     {inactive && <span className="chip bg-ink-800 text-zinc-400">paused</span>}
+                    {showMonthly && (
+                      <span className="shrink-0 tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/mo</span>
+                    )}
+                    {fc.notes && <span className="truncate">· {fc.notes}</span>}
                   </div>
-                  <p className="mt-0.5 text-xs text-zinc-500">
-                    {showMonthly
-                      ? <>≈ <Money value={monthlyFixedCost(fc)} /> / mo{fc.notes ? ` · ${fc.notes}` : ''}</>
-                      : (fc.notes || ' ')}
-                  </p>
-                </div>
-                <div className="shrink-0 text-right text-sm font-semibold tabular-nums text-zinc-100">
-                  <Money value={fc.amount} /> <span className="text-xs font-normal text-zinc-500">/ {shortFor(fc.period)}</span>
                 </div>
                 <button onClick={() => updateFixedCost(fc.id, { active: inactive })}
                   aria-label={inactive ? 'Resume fixed cost' : 'Pause fixed cost'}
@@ -154,7 +155,7 @@ export default function FixedCosts() {
                   <Power className="h-4 w-4" />
                 </button>
                 <button onClick={() => window.confirm('Delete this fixed cost?') && deleteFixedCost(fc.id)} aria-label="Delete fixed cost"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 opacity-0 transition-opacity duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer group-hover:opacity-100 focus:opacity-100">
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
