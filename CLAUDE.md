@@ -25,9 +25,9 @@ A single-page React + Vite app (no SSR) with a Supabase Postgres/Auth/Realtime b
 
 **Three-layer separation:**
 
-1. **`src/store/DataContext.jsx`** — the single source of truth. It loads all four tables (`categories`, `budgets`, `incomes`, `expenses`) once on login, holds them in React state, and exposes `useData()`. All mutations go through generic `create`/`update`/`remove` helpers (wrapped per-table as `addExpense`, `setBudget`, etc.) that write to Supabase and reconcile local state by row `id`. A realtime subscription filtered by `user_id` keeps other devices in sync. **Pages must never query Supabase directly** — go through `useData()` so every view derives from the same arrays and stays consistent.
+1. **`src/store/DataContext.jsx`** — the single source of truth. It loads all tables (`categories`, `budgets`, `incomes`, `expenses`, `fixed_costs`, `savings_goals`, `savings_contributions`) once on login, holds them in React state, and exposes `useData()`. The table list lives in the `TABLES` array (drives both the parallel load and the realtime subscription). All mutations go through generic `create`/`update`/`remove` helpers (wrapped per-table as `addExpense`, `setBudget`, `addFixedCost`, `addSavingsGoal`, `addContribution`, etc.) that write to Supabase and reconcile local state by row `id`. A realtime subscription filtered by `user_id` keeps other devices in sync. **Pages must never query Supabase directly** — go through `useData()` so every view derives from the same arrays and stays consistent.
 
-2. **`src/logic/`** — pure functions that derive everything from the raw arrays. `selectors.js` holds shared aggregations (month/week spend, spend-by-category, trailing averages); the "intelligence" modules build on it: `advisor.js` (`generateAlerts`), `savingsPotential.js`, `savingsPlan.js`, `monthlyStory.js`. Keep new derivations here and pure so Dashboard, Budgets, and Reports always compute identical numbers.
+2. **`src/logic/`** — pure functions that derive everything from the raw arrays. `selectors.js` holds shared aggregations (month/week spend, spend-by-category, trailing averages, **fixed-cost monthly normalisation** via `PERIOD_TO_MONTHLY`/`monthlyFixedTotal`/`availableToSpend`); the "intelligence" modules build on it: `advisor.js` (`generateAlerts`), `savingsPotential.js`, `savingsPlan.js`, `monthlyStory.js`, and `savings.js` (savings-goal balances/progress — distinct from the spend-cap `savingsPlan.js`). Keep new derivations here and pure so Dashboard, Budgets, Reports, Fixed costs and Savings always compute identical numbers.
 
 3. **`src/pages/` + `src/components/`** — presentation only. Pages read `useData()` and call logic functions; components (including `components/charts/` built on Recharts) are dumb renderers.
 
@@ -40,6 +40,9 @@ A single-page React + Vite app (no SSR) with a Supabase Postgres/Auth/Realtime b
 - **Money:** amounts are `numeric(12,2)` in CHF. Always format via `src/lib/money.js` (`formatCHF`, `formatSignedCHF`) and parse user input with `parseAmount`. Never hand-roll currency formatting.
 - **Dates:** stored as ISO `date` strings. Use `src/lib/dates.js` helpers (`isThisMonth`, `isThisWeek`, `startOfWeek`, `weeklyTotals`, etc.) rather than raw `Date` math so week/month boundaries match across the app.
 - **Budgets** are one row per category (unique `user_id, category_id`); use `setBudget(categoryId, amount)` which upserts.
+- **Fixed costs** (`fixed_costs`, page `/fixed-costs`) are a planning layer: recurring obligations with a `period` (`weekly|monthly|quarterly|yearly`) normalised to a monthly value. They are **not** expenses (no double-counting).
+- **Savings** (`savings_goals` + `savings_contributions`, page `/savings`) are manual pots. A goal's balance is the sum of its contributions; `target_amount`/`target_date`/`monthly_target` are optional.
+- **The Dashboard "available to spend" chain:** `Income − Fixed costs = Available`, then `Available − Spent − Saved-this-month = Left to spend`. When adding anything that affects disposable income, keep this chain consistent (logic in `selectors.js` + `savings.js`).
 - **Styling:** Tailwind with a custom dark palette (`ink-*`, `accent`) defined in `tailwind.config.js`. Icons come from `lucide-react`; category icons are stored as lucide icon names (strings).
 
 ## Security
