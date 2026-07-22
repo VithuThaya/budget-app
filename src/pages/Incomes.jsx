@@ -9,9 +9,9 @@ import { todayISO, formatDate } from '../lib/dates'
 import { monthIncome } from '../logic/selectors'
 
 const RECUR = [
-  { value: '', label: 'One-time' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
+  { value: '', label: 'Einmalig' },
+  { value: 'weekly', label: 'Wöchentlich' },
+  { value: 'monthly', label: 'Monatlich' },
 ]
 
 export default function Incomes() {
@@ -30,8 +30,8 @@ export default function Incomes() {
   async function handleAdd(e) {
     e.preventDefault()
     const value = parseAmount(amount)
-    if (!source.trim()) return setError('Add a source name.')
-    if (value <= 0) return setError('Enter an amount greater than zero.')
+    if (!source.trim()) return setError('Gib eine Quelle an.')
+    if (value <= 0) return setError('Gib einen Betrag größer als null ein.')
     setBusy(true)
     setError(null)
     try {
@@ -52,17 +52,17 @@ export default function Incomes() {
 
   return (
     <div>
-      <PageHeader title="Incomes" subtitle="Track salary, side income and recurring payments.">
-        <button onClick={() => setOpen((v) => !v)} className="btn-primary"><Plus className="h-4 w-4" /> Add income</button>
+      <PageHeader title="Einnahmen" subtitle="Gehalt, Nebeneinkünfte und wiederkehrende Zahlungen erfassen.">
+        <button onClick={() => setOpen((v) => !v)} className="btn-primary"><Plus className="h-4 w-4" /> Einnahme hinzufügen</button>
       </PageHeader>
 
       <div className="mb-5 grid grid-cols-2 gap-3">
         <div className="card p-4">
-          <span className="stat-label">This month</span>
+          <span className="stat-label">Diesen Monat</span>
           <div className="mt-1.5 text-2xl font-semibold text-green-400"><Money value={thisMonth} /></div>
         </div>
         <div className="card p-4">
-          <span className="stat-label">All time</span>
+          <span className="stat-label">Gesamt</span>
           <div className="mt-1.5 text-2xl font-semibold text-zinc-100"><Money value={total} /></div>
         </div>
       </div>
@@ -71,22 +71,22 @@ export default function Incomes() {
         <form onSubmit={handleAdd} className="card mb-5 space-y-4 p-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="source" className="label">Source</label>
-              <input id="source" className="input" placeholder="Salary, freelance…" value={source}
+              <label htmlFor="source" className="label">Quelle</label>
+              <input id="source" className="input" placeholder="Gehalt, Freelance…" value={source}
                 onChange={(e) => setSource(e.target.value)} autoFocus />
             </div>
             <div>
-              <label htmlFor="inc-amount" className="label">Amount (CHF)</label>
+              <label htmlFor="inc-amount" className="label">Betrag (CHF)</label>
               <input id="inc-amount" inputMode="decimal" className="input" placeholder="0.00" value={amount}
                 onChange={(e) => setAmount(e.target.value)} />
             </div>
             <div>
-              <label htmlFor="inc-date" className="label">Date</label>
+              <label htmlFor="inc-date" className="label">Datum</label>
               <input id="inc-date" type="date" className="input" value={date} max={todayISO()}
                 onChange={(e) => setDate(e.target.value)} />
             </div>
             <div>
-              <span className="label">Recurring</span>
+              <span className="label">Wiederkehrend</span>
               <div className="flex rounded-xl border border-ink-700 bg-ink-900 p-1">
                 {RECUR.map((o) => (
                   <button key={o.value} type="button" onClick={() => setRecur(o.value)}
@@ -99,23 +99,23 @@ export default function Incomes() {
               </div>
               {recur && (
                 <p className="mt-1.5 text-xs text-zinc-500">
-                  Automatically added every {recur === 'weekly' ? 'week' : 'month'} when you open the app.
+                  Wird {recur === 'weekly' ? 'jede Woche' : 'jeden Monat'} automatisch gebucht, wenn du die App öffnest.
                 </p>
               )}
             </div>
           </div>
           {error && <p className="text-sm text-red-300">{error}</p>}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="btn-ghost">Cancel</button>
+            <button type="button" onClick={() => setOpen(false)} className="btn-ghost">Abbrechen</button>
             <button type="submit" disabled={busy} className="btn-primary">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add income
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Einnahme hinzufügen
             </button>
           </div>
         </form>
       )}
 
       {incomes.length === 0 ? (
-        <EmptyState icon={TrendingUp} title="No income yet" message="Add your income so the app can show your net balance and savings." />
+        <EmptyState icon={TrendingUp} title="Noch keine Einnahmen" message="Trage deine Einnahmen ein, damit die App Saldo und Ersparnisse zeigen kann." />
       ) : (
         <div className="space-y-2">
           {incomes.map((inc) => (
@@ -134,7 +134,7 @@ export default function Incomes() {
                 <p className="mt-0.5 text-xs text-zinc-500">{formatDate(inc.date)}</p>
               </div>
               <div className="shrink-0 text-sm font-semibold tabular-nums text-green-400">+<Money value={inc.amount} /></div>
-              <button onClick={() => window.confirm('Delete this income?') && deleteIncome(inc.id)} aria-label="Delete income"
+              <button onClick={() => window.confirm('Diese Einnahme löschen?') && deleteIncome(inc.id)} aria-label="Einnahme löschen"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 opacity-0 transition-opacity duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer group-hover:opacity-100 focus:opacity-100">
                 <Trash2 className="h-4 w-4" />
               </button>
