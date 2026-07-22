@@ -28,13 +28,13 @@ export const COLORS = [
 
 // Seeded for brand-new accounts so the app is usable immediately.
 export const DEFAULT_CATEGORIES = [
-  { name: 'Dining', icon: 'Utensils', color: '#f97316' },
-  { name: 'Groceries', icon: 'ShoppingCart', color: '#22c55e' },
+  { name: 'Restaurant', icon: 'Utensils', color: '#f97316' },
+  { name: 'Lebensmittel', icon: 'ShoppingCart', color: '#22c55e' },
   { name: 'Transport', icon: 'Car', color: '#0ea5e9' },
-  { name: 'Housing', icon: 'Home', color: '#8b5cf6' },
-  { name: 'Utilities', icon: 'Plug', color: '#eab308' },
-  { name: 'Entertainment', icon: 'Clapperboard', color: '#ec4899' },
-  { name: 'Health', icon: 'HeartPulse', color: '#ef4444' },
-  { name: 'Shopping', icon: 'ShoppingBag', color: '#06b6d4' },
-  { name: 'Other', icon: 'Tag', color: '#64748b' },
+  { name: 'Wohnen', icon: 'Home', color: '#8b5cf6' },
+  { name: 'Nebenkosten', icon: 'Plug', color: '#eab308' },
+  { name: 'Unterhaltung', icon: 'Clapperboard', color: '#ec4899' },
+  { name: 'Gesundheit', icon: 'HeartPulse', color: '#ef4444' },
+  { name: 'Einkaufen', icon: 'ShoppingBag', color: '#06b6d4' },
+  { name: 'Sonstiges', icon: 'Tag', color: '#64748b' },
 ]

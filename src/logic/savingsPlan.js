@@ -4,10 +4,11 @@
 // Recomputed whenever expenses change so the plan stays current.
 import { parseISO, todayISO, daysBetween, addDays } from '../lib/dates'
 
-// How aggressively to trim each category (by name). Defaults to a gentle 10%.
-const REDUCTION = {
-  Dining: 0.25, Entertainment: 0.25, Shopping: 0.2, Coffee: 0.3,
-  Other: 0.15, Transport: 0.1, Groceries: 0.1,
+// How aggressively to trim each category, keyed by ICON (language-independent,
+// so renaming a category — e.g. to German — never breaks this). Default 10%.
+const REDUCTION_BY_ICON = {
+  Utensils: 0.25, Clapperboard: 0.25, ShoppingBag: 0.2, Coffee: 0.3,
+  Tag: 0.15, Car: 0.1, ShoppingCart: 0.1,
 }
 const DEFAULT_REDUCTION = 0.1
 
@@ -31,7 +32,7 @@ function buildPlan({ horizon, rates, categoryMap }) {
     const name = cat?.name || 'Uncategorised'
     const baseline = rate * horizon // projected spend at current pace
     if (baseline <= 0) continue
-    const reduction = REDUCTION[name] ?? DEFAULT_REDUCTION
+    const reduction = REDUCTION_BY_ICON[cat?.icon] ?? DEFAULT_REDUCTION
     const cap = baseline * (1 - reduction)
     const saving = baseline - cap
     lines.push({

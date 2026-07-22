@@ -32,8 +32,8 @@ export function generateAlerts({ expenses, budgets, categoryMap }) {
       alerts.push({
         id: `spike-${catId}`,
         level: 'warning',
-        title: `${name} spending increased ${pct}% this week`,
-        detail: `This week is well above your recent ${name.toLowerCase()} average. Worth a look.`,
+        title: `${name}: ${pct}% mehr diese Woche`,
+        detail: `Diese Woche liegt deutlich über deinem bisherigen ${name}-Schnitt. Ein Blick lohnt sich.`,
         sort: 60 + Math.min(pct, 100),
       })
     }
@@ -47,16 +47,16 @@ export function generateAlerts({ expenses, budgets, categoryMap }) {
         alerts.push({
           id: `over-${catId}`,
           level: 'danger',
-          title: `You've exceeded your ${name} budget`,
-          detail: `${Math.round(ratio * 100)}% of this month's ${name.toLowerCase()} budget used.`,
+          title: `${name}-Budget überschritten`,
+          detail: `${Math.round(ratio * 100)}% deines ${name}-Budgets diesen Monat verbraucht.`,
           sort: 200 + Math.round(ratio * 100),
         })
       } else if (ratio >= NEAR_BUDGET) {
         alerts.push({
           id: `near-${catId}`,
           level: 'warning',
-          title: `You're close to exceeding your ${name} budget`,
-          detail: `${Math.round(ratio * 100)}% used — ${Math.round((1 - ratio) * 100)}% remaining this month.`,
+          title: `${name}-Budget fast ausgeschöpft`,
+          detail: `${Math.round(ratio * 100)}% verbraucht — ${Math.round((1 - ratio) * 100)}% bleiben diesen Monat.`,
           sort: 120 + Math.round(ratio * 100),
         })
       }
@@ -72,8 +72,8 @@ export function generateAlerts({ expenses, budgets, categoryMap }) {
       alerts.push({
         id: 'trend-up',
         level: 'info',
-        title: `Your overall spending has risen ${pct}% over the last 4 weeks`,
-        detail: 'Spending has increased every week recently. Consider a saving plan.',
+        title: `Ausgaben in 4 Wochen um ${pct}% gestiegen`,
+        detail: 'Die Ausgaben steigen zuletzt jede Woche. Vielleicht Zeit für einen Sparplan.',
         sort: 50,
       })
     }
@@ -84,8 +84,8 @@ export function generateAlerts({ expenses, budgets, categoryMap }) {
     alerts.push({
       id: 'all-good',
       level: 'success',
-      title: 'Spending looks healthy',
-      detail: 'No spikes or budget risks detected this week. Keep it up.',
+      title: 'Ausgaben sehen gesund aus',
+      detail: 'Keine Spitzen oder Budget-Risiken diese Woche. Weiter so.',
       sort: 0,
     })
   }

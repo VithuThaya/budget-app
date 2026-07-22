@@ -78,17 +78,17 @@ export function isThisWeek(iso) {
 
 /** Human label like "23 Jun 2026". */
 export function formatDate(iso, opts = { day: '2-digit', month: 'short', year: 'numeric' }) {
-  return parseISO(iso).toLocaleDateString('en-CH', opts)
+  return parseISO(iso).toLocaleDateString('de-CH', opts)
 }
 
 /** Short weekday + day, e.g. "Mon 23". */
 export function formatDayLabel(iso) {
-  return parseISO(iso).toLocaleDateString('en-CH', { weekday: 'short', day: 'numeric' })
+  return parseISO(iso).toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric' })
 }
 
 /** Month label, e.g. "June 2026". */
 export function formatMonthLabel(d = new Date()) {
-  return parseISO(toISODate(d)).toLocaleDateString('en-CH', { month: 'long', year: 'numeric' })
+  return parseISO(toISODate(d)).toLocaleDateString('de-CH', { month: 'long', year: 'numeric' })
 }
 
 /** Bucket a list of {date, amount} into the last `weeks` ISO weeks.
@@ -101,7 +101,7 @@ export function weeklyTotals(items, weeks = 6, field = 'amount') {
     buckets.push({
       start,
       end: addDays(start, 7),
-      label: start.toLocaleDateString('en-CH', { day: '2-digit', month: 'short' }),
+      label: start.toLocaleDateString('de-CH', { day: '2-digit', month: 'short' }),
       total: 0,
     })
   }
