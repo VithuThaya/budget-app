@@ -8,13 +8,14 @@ import { parseAmount, formatCHF } from '../lib/money'
 import { monthlyFixedCost, monthlyFixedTotal } from '../logic/selectors'
 
 const PERIODS = [
-  { value: 'weekly', label: 'Weekly', short: 'wk' },
-  { value: 'monthly', label: 'Monthly', short: 'mo' },
-  { value: 'quarterly', label: 'Quarterly', short: 'qtr' },
-  { value: 'yearly', label: 'Yearly', short: 'yr' },
+  { value: 'weekly', label: 'Wöchentlich', short: 'Wo.' },
+  { value: 'monthly', label: 'Monatlich', short: 'Mt.' },
+  { value: 'quarterly', label: 'Vierteljährlich', short: 'Qu.' },
+  { value: 'yearly', label: 'Jährlich', short: 'J.' },
 ]
 
-const shortFor = (period) => PERIODS.find((p) => p.value === period)?.short || 'mo'
+const shortFor = (period) => PERIODS.find((p) => p.value === period)?.short || 'Mt.'
+const labelFor = (period) => PERIODS.find((p) => p.value === period)?.label || period
 
 export default function FixedCosts() {
   const { fixedCosts, addFixedCost, updateFixedCost, deleteFixedCost } = useData()
@@ -32,8 +33,8 @@ export default function FixedCosts() {
   async function handleAdd(e) {
     e.preventDefault()
     const value = parseAmount(amount)
-    if (!name.trim()) return setError('Add a name (e.g. Rent, Health insurance).')
-    if (value <= 0) return setError('Enter an amount greater than zero.')
+    if (!name.trim()) return setError('Gib einen Namen an (z. B. Miete, Krankenkasse).')
+    if (value <= 0) return setError('Gib einen Betrag größer als null ein.')
     setBusy(true)
     setError(null)
     try {
@@ -54,17 +55,17 @@ export default function FixedCosts() {
 
   return (
     <div>
-      <PageHeader title="Fixed costs" subtitle="Recurring obligations subtracted from your income, so you see what's left to spend.">
-        <button onClick={() => setOpen((v) => !v)} className="btn-primary"><Plus className="h-4 w-4" /> Add fixed cost</button>
+      <PageHeader title="Fixkosten" subtitle="Wiederkehrende Verpflichtungen, die vom Einkommen abgezogen werden — so siehst du, was zum Ausgeben bleibt.">
+        <button onClick={() => setOpen((v) => !v)} className="btn-primary"><Plus className="h-4 w-4" /> Fixkosten hinzufügen</button>
       </PageHeader>
 
       <div className="mb-5 grid grid-cols-2 gap-3">
         <div className="card p-4">
-          <span className="stat-label">Per month</span>
+          <span className="stat-label">Pro Monat</span>
           <div className="mt-1.5 truncate text-xl font-semibold text-amber-400 sm:text-2xl"><Money value={monthlyTotal} /></div>
         </div>
         <div className="card p-4">
-          <span className="stat-label">Per year</span>
+          <span className="stat-label">Pro Jahr</span>
           <div className="mt-1.5 truncate text-xl font-semibold text-zinc-100 sm:text-2xl"><Money value={yearlyTotal} whole /></div>
         </div>
       </div>
@@ -74,16 +75,16 @@ export default function FixedCosts() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="fc-name" className="label">Name</label>
-              <input id="fc-name" className="input" placeholder="Rent, health insurance…" value={name}
+              <input id="fc-name" className="input" placeholder="Miete, Krankenkasse…" value={name}
                 onChange={(e) => setName(e.target.value)} autoFocus />
             </div>
             <div>
-              <label htmlFor="fc-amount" className="label">Amount (CHF)</label>
+              <label htmlFor="fc-amount" className="label">Betrag (CHF)</label>
               <input id="fc-amount" inputMode="decimal" className="input" placeholder="0.00" value={amount}
                 onChange={(e) => setAmount(e.target.value)} />
             </div>
             <div className="sm:col-span-2">
-              <span className="label">Period</span>
+              <span className="label">Zeitraum</span>
               <div className="flex rounded-xl border border-ink-700 bg-ink-900 p-1">
                 {PERIODS.map((o) => (
                   <button key={o.value} type="button" onClick={() => setPeriod(o.value)}
@@ -96,29 +97,29 @@ export default function FixedCosts() {
               </div>
             </div>
             <div className="sm:col-span-2">
-              <label htmlFor="fc-notes" className="label">Notes (optional)</label>
-              <input id="fc-notes" className="input" placeholder="Provider, contract end…" value={notes}
+              <label htmlFor="fc-notes" className="label">Notiz (optional)</label>
+              <input id="fc-notes" className="input" placeholder="Anbieter, Vertragsende…" value={notes}
                 onChange={(e) => setNotes(e.target.value)} />
             </div>
           </div>
           {amount && parseAmount(amount) > 0 && period !== 'monthly' && (
             <p className="text-xs text-zinc-400">
-              ≈ {formatCHF(monthlyFixedCost({ amount: parseAmount(amount), period }))} per month
+              ≈ {formatCHF(monthlyFixedCost({ amount: parseAmount(amount), period }))} pro Monat
             </p>
           )}
           {error && <p className="text-sm text-red-300">{error}</p>}
           <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="btn-ghost">Cancel</button>
+            <button type="button" onClick={() => setOpen(false)} className="btn-ghost">Abbrechen</button>
             <button type="submit" disabled={busy} className="btn-primary">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add fixed cost
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Fixkosten hinzufügen
             </button>
           </div>
         </form>
       )}
 
       {fixedCosts.length === 0 ? (
-        <EmptyState icon={CalendarClock} title="No fixed costs yet"
-          message="Add recurring costs like rent, insurance or subscriptions to see how much you really have left each month." />
+        <EmptyState icon={CalendarClock} title="Noch keine Fixkosten"
+          message="Füge wiederkehrende Kosten wie Miete, Versicherung oder Abos hinzu, um zu sehen, wie viel dir jeden Monat wirklich bleibt." />
       ) : (
         <div className="space-y-2">
           {fixedCosts.map((fc) => {
@@ -138,23 +139,23 @@ export default function FixedCosts() {
                     </span>
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-                    <span className="chip bg-accent/10 text-accent-soft">{fc.period}</span>
-                    {inactive && <span className="chip bg-ink-800 text-zinc-400">paused</span>}
+                    <span className="chip bg-accent/10 text-accent-soft">{labelFor(fc.period)}</span>
+                    {inactive && <span className="chip bg-ink-800 text-zinc-400">pausiert</span>}
                     {showMonthly && (
-                      <span className="shrink-0 tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/mo</span>
+                      <span className="shrink-0 tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/Mt.</span>
                     )}
                     {fc.notes && <span className="truncate">· {fc.notes}</span>}
                   </div>
                 </div>
                 <button onClick={() => updateFixedCost(fc.id, { active: inactive })}
-                  aria-label={inactive ? 'Resume fixed cost' : 'Pause fixed cost'}
-                  title={inactive ? 'Resume (count again)' : 'Pause (stop counting)'}
+                  aria-label={inactive ? 'Fixkosten fortsetzen' : 'Fixkosten pausieren'}
+                  title={inactive ? 'Fortsetzen (wieder zählen)' : 'Pausieren (nicht mehr zählen)'}
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 cursor-pointer ${
                     inactive ? 'text-zinc-500 hover:bg-good/15 hover:text-green-300' : 'text-amber-400 hover:bg-amber-500/15'
                   }`}>
                   <Power className="h-4 w-4" />
                 </button>
-                <button onClick={() => window.confirm('Delete this fixed cost?') && deleteFixedCost(fc.id)} aria-label="Delete fixed cost"
+                <button onClick={() => window.confirm('Diese Fixkosten löschen?') && deleteFixedCost(fc.id)} aria-label="Fixkosten löschen"
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
                   <Trash2 className="h-4 w-4" />
                 </button>
