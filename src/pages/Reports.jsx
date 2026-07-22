@@ -159,7 +159,7 @@ function ComparisonCard({ title, icon: Icon, current, previous }) {
           </span>
         )}
       </div>
-      <div className="mt-2 flex items-end gap-3">
+      <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
         <span className="text-2xl font-semibold text-zinc-50"><Money value={current} /></span>
         <span className="pb-1 text-xs text-zinc-500">vs <Money value={previous} /> before</span>
       </div>

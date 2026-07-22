@@ -105,7 +105,7 @@ function BudgetRow({ category, budget, spent, onSave }) {
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-zinc-100">{category.name}</p>
+          <p className="truncate font-medium text-zinc-100">{category.name}</p>
           <p className="text-xs text-zinc-500">
             <Money value={spent} /> spent
             {budget > 0 && (
