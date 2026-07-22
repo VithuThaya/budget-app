@@ -1,11 +1,11 @@
 // Shared derivations used by pages and the intelligence modules.
 // Keeping these pure + centralised guarantees Dashboard, Budgets and Reports
 // all compute the same numbers from the same source arrays.
-import { isThisMonth, isThisWeek, startOfWeek, addDays, parseISO } from '../lib/dates'
+import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO } from '../lib/dates'
 
-/** Total spent this calendar month. */
-export function monthSpend(expenses) {
-  return (expenses || []).filter((e) => isThisMonth(e.date)).reduce((a, e) => a + Number(e.amount), 0)
+/** Total spent in the month of `ref` (default: current month). */
+export function monthSpend(expenses, ref) {
+  return (expenses || []).filter((e) => isSameMonth(e.date, ref)).reduce((a, e) => a + Number(e.amount), 0)
 }
 
 /** Total spent this ISO week. */
@@ -13,19 +13,19 @@ export function weekSpend(expenses) {
   return (expenses || []).filter((e) => isThisWeek(e.date)).reduce((a, e) => a + Number(e.amount), 0)
 }
 
-/** Spend grouped by category id (optionally only this month). */
-export function spendByCategory(expenses, { monthOnly = true } = {}) {
+/** Spend grouped by category id (optionally only the month of `ref`). */
+export function spendByCategory(expenses, { monthOnly = true, ref } = {}) {
   const map = new Map()
   for (const e of expenses || []) {
-    if (monthOnly && !isThisMonth(e.date)) continue
+    if (monthOnly && !isSameMonth(e.date, ref)) continue
     map.set(e.category_id, (map.get(e.category_id) || 0) + Number(e.amount))
   }
   return map
 }
 
-/** Build pie/legend data [{ name, value, color }] for this month's spend. */
-export function categoryPieData(expenses, categoryMap, { monthOnly = true } = {}) {
-  const byCat = spendByCategory(expenses, { monthOnly })
+/** Build pie/legend data [{ name, value, color }] for the month's spend. */
+export function categoryPieData(expenses, categoryMap, { monthOnly = true, ref } = {}) {
+  const byCat = spendByCategory(expenses, { monthOnly, ref })
   const rows = []
   for (const [catId, value] of byCat.entries()) {
     if (value <= 0) continue
@@ -61,9 +61,9 @@ export function currentWeekCategory(expenses, categoryId) {
   return total
 }
 
-/** Net for the month: income minus expenses. */
-export function monthIncome(incomes) {
-  return (incomes || []).filter((i) => isThisMonth(i.date)).reduce((a, i) => a + Number(i.amount), 0)
+/** Total income in the month of `ref` (default: current month). */
+export function monthIncome(incomes, ref) {
+  return (incomes || []).filter((i) => isSameMonth(i.date, ref)).reduce((a, i) => a + Number(i.amount), 0)
 }
 
 // --- Fixed costs (planning layer) -----------------------------------------

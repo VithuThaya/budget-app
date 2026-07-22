@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 import {
   PieChart, LineChart, BarChart3, PiggyBank, CalendarRange, Sparkles,
-  Download, TrendingDown, Trophy, CalendarCheck, Loader2,
+  Download, TrendingDown, Trophy, CalendarCheck, Loader2, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
@@ -15,8 +15,8 @@ import Money from '../components/Money'
 import EmptyState from '../components/EmptyState'
 import { formatCHF, formatPct } from '../lib/money'
 import {
-  dailyTotals, weeklyTotals, formatMonthLabel, isThisMonth, isThisWeek,
-  startOfWeek, addDays, parseISO,
+  monthlyDailyTotals, weeklyTotals, formatMonthLabel, isSameMonth, isThisWeek,
+  startOfWeek, startOfMonth, addDays, addMonths, parseISO, toISODate, todayISO,
 } from '../lib/dates'
 import { categoryPieData } from '../logic/selectors'
 import { savingsPotential } from '../logic/savingsPotential'
@@ -25,15 +25,17 @@ import { monthlyStory } from '../logic/monthlyStory'
 
 export default function Reports() {
   const { expenses, incomes, categoryMap } = useData()
+  const [cursor, setCursor] = useState(() => startOfMonth())
+  const isCurrent = isSameMonth(todayISO(), cursor)
 
-  const pie = useMemo(() => categoryPieData(expenses, categoryMap, { monthOnly: true }), [expenses, categoryMap])
-  const trend = useMemo(() => dailyTotals(expenses, 30), [expenses])
+  const pie = useMemo(() => categoryPieData(expenses, categoryMap, { monthOnly: true, ref: cursor }), [expenses, categoryMap, cursor])
+  const trend = useMemo(() => monthlyDailyTotals(expenses, cursor), [expenses, cursor])
   const weekly = useMemo(() => weeklyTotals(expenses, 8), [expenses])
 
-  const compare = useMemo(() => buildComparisons(expenses), [expenses])
+  const compare = useMemo(() => buildComparisons(expenses, cursor), [expenses, cursor])
   const potential = useMemo(() => savingsPotential({ expenses, categoryMap }), [expenses, categoryMap])
   const plans = useMemo(() => savingPlans({ expenses, categoryMap }), [expenses, categoryMap])
-  const story = useMemo(() => monthlyStory({ expenses, incomes, categoryMap }), [expenses, incomes, categoryMap])
+  const story = useMemo(() => monthlyStory({ expenses, incomes, categoryMap, ref: cursor }), [expenses, incomes, categoryMap, cursor])
 
   if (expenses.length === 0) {
     return (
@@ -48,15 +50,20 @@ export default function Reports() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Reports" subtitle={`Insights for ${formatMonthLabel()}`} />
+      <PageHeader title="Reports" subtitle={`Insights for ${formatMonthLabel(cursor)}`}>
+        <MonthSwitcher cursor={cursor} setCursor={setCursor} isCurrent={isCurrent} />
+      </PageHeader>
 
       {/* Comparison summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {isCurrent && (
+          <ComparisonCard
+            title="This week vs last week" icon={CalendarRange}
+            current={compare.week.current} previous={compare.week.previous} />
+        )}
         <ComparisonCard
-          title="This week vs last week" icon={CalendarRange}
-          current={compare.week.current} previous={compare.week.previous} />
-        <ComparisonCard
-          title="This month vs last month" icon={CalendarRange}
+          title={isCurrent ? 'This month vs last month' : `${formatMonthLabel(cursor)} vs previous month`}
+          icon={CalendarRange}
           current={compare.month.current} previous={compare.month.previous} />
       </div>
 
@@ -70,21 +77,25 @@ export default function Reports() {
         </section>
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Daily trend (30 days)
+            <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Daily trend — {formatMonthLabel(cursor)}
           </h2>
           <TrendLine data={trend} />
         </section>
       </div>
 
-      {/* Weekly comparison bars */}
-      <section className="card p-5">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-          <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Weekly comparison (8 weeks)
-        </h2>
-        <WeeklyBars data={weekly} height={260} />
-      </section>
+      {/* Weekly comparison bars (trailing weeks — a live view, current month only) */}
+      {isCurrent && (
+        <section className="card p-5">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+            <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Weekly comparison (8 weeks)
+          </h2>
+          <WeeklyBars data={weekly} height={260} />
+        </section>
+      )}
 
-      {/* Savings potential */}
+      {/* Savings potential + saving plans are forward-looking (current pace) — current month only */}
+      {isCurrent && (
+      <>
       <section className="card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
@@ -137,9 +148,37 @@ export default function Reports() {
           <PlanCard title="30-day plan" plan={plans.month} />
         </div>
       </section>
+      </>
+      )}
 
       {/* Monthly story */}
-      <MonthlyStory story={story} />
+      <MonthlyStory story={story} cursor={cursor} />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+function MonthSwitcher({ cursor, setCursor, isCurrent }) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
+      <button
+        onClick={() => setCursor((c) => addMonths(c, -1))}
+        aria-label="Previous month"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 cursor-pointer"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <span className="min-w-[7.5rem] px-2 text-center text-sm font-medium text-zinc-100">
+        {formatMonthLabel(cursor)}
+      </span>
+      <button
+        onClick={() => setCursor((c) => addMonths(c, 1))}
+        disabled={isCurrent}
+        aria-label="Next month"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
     </div>
   )
 }
@@ -208,7 +247,7 @@ function PlanCard({ title, plan }) {
   )
 }
 
-function MonthlyStory({ story }) {
+function MonthlyStory({ story, cursor }) {
   const ref = useRef(null)
   const [busy, setBusy] = useState(false)
 
@@ -222,7 +261,7 @@ function MonthlyStory({ story }) {
         cacheBust: true,
       })
       const link = document.createElement('a')
-      link.download = `budget-story-${new Date().toISOString().slice(0, 7)}.png`
+      link.download = `budget-story-${toISODate(cursor).slice(0, 7)}.png`
       link.href = dataUrl
       link.click()
     } catch (e) {
@@ -249,7 +288,7 @@ function MonthlyStory({ story }) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-accent-soft">Monthly Story</p>
-            <h3 className="text-xl font-semibold text-zinc-50">{formatMonthLabel()}</h3>
+            <h3 className="text-xl font-semibold text-zinc-50">{formatMonthLabel(cursor)}</h3>
           </div>
           <div className="text-right">
             <p className="stat-label">Net</p>
@@ -322,7 +361,10 @@ function HighlightRow({ icon: Icon, tint, label, value, sub }) {
 }
 
 // ---------------------------------------------------------------------------
-function buildComparisons(expenses) {
+function buildComparisons(expenses, ref = new Date()) {
+  const refDate = ref instanceof Date ? ref : parseISO(ref)
+
+  // Week comparison is a live view — only shown/used for the current month.
   const weekStart = startOfWeek()
   const lastWeekStart = addDays(weekStart, -7)
   let weekCur = 0, weekPrev = 0
@@ -332,14 +374,12 @@ function buildComparisons(expenses) {
     else if (d >= lastWeekStart && d < weekStart) weekPrev += Number(e.amount)
   }
 
-  const now = new Date()
-  const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1
-  const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+  // Month comparison: selected month vs the month before it.
+  const prevMonth = addMonths(refDate, -1)
   let monthCur = 0, monthPrev = 0
   for (const e of expenses) {
-    const d = parseISO(e.date)
-    if (isThisMonth(e.date)) monthCur += Number(e.amount)
-    else if (d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear) monthPrev += Number(e.amount)
+    if (isSameMonth(e.date, refDate)) monthCur += Number(e.amount)
+    else if (isSameMonth(e.date, prevMonth)) monthPrev += Number(e.amount)
   }
 
   return {

@@ -50,11 +50,22 @@ export function daysBetween(a, b) {
   return Math.round((parseISO(toISODate(b)) - parseISO(toISODate(a))) / DAY_MS)
 }
 
+/** True if an ISO date falls in the same calendar month as `ref` (default now). */
+export function isSameMonth(iso, ref = new Date()) {
+  const d = parseISO(iso)
+  const r = ref instanceof Date ? ref : parseISO(ref)
+  return d.getFullYear() === r.getFullYear() && d.getMonth() === r.getMonth()
+}
+
 /** True if an ISO date falls in the current calendar month. */
 export function isThisMonth(iso) {
-  const d = parseISO(iso)
-  const now = new Date()
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  return isSameMonth(iso, new Date())
+}
+
+/** Add n months to a date, returning a new Date on the 1st of the result month. */
+export function addMonths(d, n) {
+  const date = parseISO(toISODate(d))
+  return new Date(date.getFullYear(), date.getMonth() + n, 1)
 }
 
 /** True if an ISO date falls in the current ISO week (Mon–Sun). */
@@ -109,6 +120,26 @@ export function dailyTotals(items, days = 30, field = 'amount') {
   for (let i = days - 1; i >= 0; i--) {
     const d = addDays(end, -i)
     buckets.push({ date: toISODate(d), label: formatDayLabel(toISODate(d)), total: 0 })
+  }
+  const index = new Map(buckets.map((b) => [b.date, b]))
+  for (const it of items || []) {
+    const b = index.get(String(it.date).slice(0, 10))
+    if (b) b.total += Number(it[field]) || 0
+  }
+  return buckets
+}
+
+/** Bucket items into every calendar day of the month containing `ref`.
+ *  Returns oldest->newest: [{ date, label, total }]. */
+export function monthlyDailyTotals(items, ref = new Date(), field = 'amount') {
+  const r = ref instanceof Date ? ref : parseISO(ref)
+  const year = r.getFullYear()
+  const month = r.getMonth()
+  const days = new Date(year, month + 1, 0).getDate()
+  const buckets = []
+  for (let day = 1; day <= days; day++) {
+    const iso = toISODate(new Date(year, month, day))
+    buckets.push({ date: iso, label: formatDayLabel(iso), total: 0 })
   }
   const index = new Map(buckets.map((b) => [b.date, b]))
   for (const it of items || []) {

@@ -1,12 +1,14 @@
 // Monthly Financial Story
 // Summarises the current month: top spending day, biggest saving day,
 // category breakdown, unusual trends and overall performance.
-import { isThisMonth, formatDate, parseISO, toISODate } from '../lib/dates'
+import { isSameMonth, formatDate, parseISO, toISODate } from '../lib/dates'
 import { categoryPieData } from './selectors'
 
-export function monthlyStory({ expenses, incomes, categoryMap }) {
-  const monthExpenses = (expenses || []).filter((e) => isThisMonth(e.date))
-  const monthIncomes = (incomes || []).filter((i) => isThisMonth(i.date))
+export function monthlyStory({ expenses, incomes, categoryMap, ref = new Date() }) {
+  const refDate = ref instanceof Date ? ref : parseISO(ref)
+  const isCurrent = isSameMonth(toISODate(new Date()), refDate)
+  const monthExpenses = (expenses || []).filter((e) => isSameMonth(e.date, refDate))
+  const monthIncomes = (incomes || []).filter((i) => isSameMonth(i.date, refDate))
 
   const totalSpent = monthExpenses.reduce((a, e) => a + Number(e.amount), 0)
   const totalIncome = monthIncomes.reduce((a, i) => a + Number(i.amount), 0)
@@ -36,23 +38,25 @@ export function monthlyStory({ expenses, incomes, categoryMap }) {
     if (!bestSavingDay || delta > bestSavingDay.amount) bestSavingDay = { date: d, amount: delta }
   }
   // A "no-spend" day is also a good saving signal when there's no income data.
+  // For a past month count the whole month; for the current month, up to today.
+  const year = refDate.getFullYear()
+  const month = refDate.getMonth()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const lastDay = isCurrent ? new Date().getDate() : daysInMonth
   let noSpendDays = 0
   if (monthExpenses.length) {
-    const today = parseISO(toISODate(new Date()))
-    const first = parseISO(toISODate(new Date(today.getFullYear(), today.getMonth(), 1)))
-    for (let d = new Date(first); d <= today; d.setDate(d.getDate() + 1)) {
-      if (!perDay.has(toISODate(d))) noSpendDays += 1
+    for (let day = 1; day <= lastDay; day++) {
+      if (!perDay.has(toISODate(new Date(year, month, day)))) noSpendDays += 1
     }
   }
 
-  const breakdown = categoryPieData(expenses, categoryMap, { monthOnly: true })
+  const breakdown = categoryPieData(expenses, categoryMap, { monthOnly: true, ref: refDate })
   const topCategory = breakdown[0] || null
 
-  // Daily average + simple pace projection for the full month.
-  const dayOfMonth = new Date().getDate()
-  const dailyAvg = dayOfMonth ? totalSpent / dayOfMonth : 0
-  const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-  const projectedMonth = dailyAvg * daysInMonth
+  // Daily average + pace projection. Projection only makes sense mid-month;
+  // for a completed past month the "projection" is just the actual total.
+  const dailyAvg = lastDay ? totalSpent / lastDay : 0
+  const projectedMonth = isCurrent ? dailyAvg * daysInMonth : totalSpent
 
   return {
     totalSpent, totalIncome, net,
