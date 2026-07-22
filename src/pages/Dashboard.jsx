@@ -191,8 +191,6 @@ export default function Dashboard() {
                   amount={e.amount}
                   date={e.date}
                   category={categoryMap.get(e.category_id)}
-                  recurring={e.recurring}
-                  recurInterval={e.recur_interval}
                   editTo={`/expenses/${e.id}/edit`}
                   onDelete={() => window.confirm('Delete this expense?') && deleteExpense(e.id)}
                 />

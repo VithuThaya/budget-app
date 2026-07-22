@@ -97,6 +97,11 @@ export default function Incomes() {
                   </button>
                 ))}
               </div>
+              {recur && (
+                <p className="mt-1.5 text-xs text-zinc-500">
+                  Automatically added every {recur === 'weekly' ? 'week' : 'month'} when you open the app.
+                </p>
+              )}
             </div>
           </div>
           {error && <p className="text-sm text-red-300">{error}</p>}

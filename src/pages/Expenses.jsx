@@ -105,8 +105,6 @@ export default function Expenses() {
                     amount={e.amount}
                     date={e.date}
                     category={categoryMap.get(e.category_id)}
-                    recurring={e.recurring}
-                    recurInterval={e.recur_interval}
                     editTo={`/expenses/${e.id}/edit`}
                     onDelete={() => handleDelete(e.id)}
                   />

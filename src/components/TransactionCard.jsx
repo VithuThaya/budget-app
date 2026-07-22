@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Pencil, Trash2, Repeat } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { iconFor } from '../lib/categoryMeta'
 import { formatDate } from '../lib/dates'
 import Money from './Money'
@@ -7,7 +7,7 @@ import Money from './Money'
 // Consistent transaction row used on Expenses, Dashboard and Incomes.
 // `category` may be undefined (e.g. deleted category) — we fall back gracefully.
 export default function TransactionCard({
-  title, amount, date, category, recurring, recurInterval,
+  title, amount, date, category,
   editTo, onDelete, kind = 'expense',
 }) {
   const Icon = iconFor(category?.icon)
@@ -25,17 +25,9 @@ export default function TransactionCard({
       </span>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium text-zinc-100">
-            {title || category?.name || 'Uncategorised'}
-          </p>
-          {recurring && (
-            <span className="chip bg-accent/10 text-accent-soft" title={`Recurring ${recurInterval || ''}`}>
-              <Repeat className="h-3 w-3" />
-              {recurInterval || 'recurring'}
-            </span>
-          )}
-        </div>
+        <p className="truncate text-sm font-medium text-zinc-100">
+          {title || category?.name || 'Uncategorised'}
+        </p>
         <p className="mt-0.5 truncate text-xs text-zinc-500">
           {category?.name ? `${category.name} • ` : ''}{formatDate(date)}
         </p>

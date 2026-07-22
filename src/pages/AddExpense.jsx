@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { Loader2, Save, ArrowLeft, Repeat } from 'lucide-react'
+import { Loader2, Save, ArrowLeft } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import { parseAmount } from '../lib/money'
 import { todayISO } from '../lib/dates'
 import PageHeader from '../components/PageHeader'
-
-const RECUR_OPTIONS = [
-  { value: '', label: 'One-time' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-]
 
 export default function AddExpense() {
   const { id } = useParams()
@@ -23,7 +17,6 @@ export default function AddExpense() {
   const [categoryId, setCategoryId] = useState('')
   const [date, setDate] = useState(todayISO())
   const [notes, setNotes] = useState('')
-  const [recur, setRecur] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -36,7 +29,6 @@ export default function AddExpense() {
       setCategoryId(exp.category_id || '')
       setDate(String(exp.date).slice(0, 10))
       setNotes(exp.notes || '')
-      setRecur(exp.recurring ? exp.recur_interval || 'monthly' : '')
     }
   }, [isEdit, id, expenses])
 
@@ -63,8 +55,6 @@ export default function AddExpense() {
       category_id: categoryId,
       date,
       notes: notes.trim() || null,
-      recurring: Boolean(recur),
-      recur_interval: recur || null,
     }
     try {
       if (isEdit) await updateExpense(id, payload)
@@ -133,21 +123,6 @@ export default function AddExpense() {
           <label htmlFor="date" className="label">Date</label>
           <input id="date" type="date" className="input" value={date} max={todayISO()}
             onChange={(e) => setDate(e.target.value)} />
-        </div>
-
-        {/* Recurring */}
-        <div>
-          <span className="label flex items-center gap-1.5"><Repeat className="h-3.5 w-3.5" /> Recurring (subscriptions)</span>
-          <div className="flex rounded-xl border border-ink-700 bg-ink-900 p-1">
-            {RECUR_OPTIONS.map((opt) => (
-              <button key={opt.value} type="button" onClick={() => setRecur(opt.value)}
-                className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                  recur === opt.value ? 'bg-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
-                }`}>
-                {opt.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Notes */}

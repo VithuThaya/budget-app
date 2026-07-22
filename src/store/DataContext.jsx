@@ -3,6 +3,8 @@ import {
 } from 'react'
 import { supabase, isConfigured } from '../lib/supabase'
 import { DEFAULT_CATEGORIES } from '../lib/categoryMeta'
+import { pendingIncomeInserts } from '../logic/recurring'
+import { todayISO } from '../lib/dates'
 
 // ---------------------------------------------------------------------------
 // DataContext is the SINGLE source of truth for the whole app. Every page
@@ -29,6 +31,7 @@ export function DataProvider({ session, children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const seededRef = useRef(false)
+  const recurredForRef = useRef(null)
 
   const setters = useMemo(
     () => ({
@@ -165,6 +168,21 @@ export function DataProvider({ session, children }) {
   const addIncome = useCallback((v) => create('incomes', v), [create])
   const updateIncome = useCallback((id, v) => update('incomes', id, v), [update])
   const deleteIncome = useCallback((id) => remove('incomes', id), [remove])
+
+  // Materialise recurring incomes once per login: for each recurring template,
+  // insert any occurrences that came due while the app was closed. Idempotent —
+  // pendingIncomeInserts skips occurrences that already exist (source+date).
+  useEffect(() => {
+    if (loading || !userId || recurredForRef.current === userId) return
+    recurredForRef.current = userId
+    const inserts = pendingIncomeInserts(incomes, todayISO())
+    if (!inserts.length) return
+    ;(async () => {
+      for (const v of inserts) {
+        try { await addIncome(v) } catch { /* skip a failed occurrence, keep going */ }
+      }
+    })()
+  }, [loading, userId, incomes, addIncome])
 
   const addFixedCost = useCallback((v) => create('fixed_costs', v), [create])
   const updateFixedCost = useCallback((id, v) => update('fixed_costs', id, v), [update])
