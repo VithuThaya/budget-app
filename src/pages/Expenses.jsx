@@ -50,42 +50,42 @@ export default function Expenses() {
   }, [filtered, sort])
 
   async function handleDelete(id) {
-    if (!window.confirm('Delete this expense?')) return
+    if (!window.confirm('Diese Ausgabe löschen?')) return
     await deleteExpense(id)
   }
 
   return (
     <div>
-      <PageHeader title="Expenses" subtitle={`${filtered.length} of ${expenses.length} transactions • ${''}`}>
-        <Link to="/expenses/add" className="btn-primary"><Plus className="h-4 w-4" /> Add expense</Link>
+      <PageHeader title="Ausgaben" subtitle={`${filtered.length} von ${expenses.length} Buchungen`}>
+        <Link to="/expenses/add" className="btn-primary"><Plus className="h-4 w-4" /> Ausgabe hinzufügen</Link>
       </PageHeader>
 
       {/* Filters */}
       <div className="card mb-5 flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-          <input className="input pl-9" placeholder="Search notes or category…"
+          <input className="input pl-9" placeholder="Notiz oder Kategorie suchen…"
             value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <select className="input sm:w-44" value={catFilter} onChange={(e) => setCatFilter(e.target.value)} aria-label="Filter by category">
-          <option value="all">All categories</option>
+        <select className="input sm:w-44" value={catFilter} onChange={(e) => setCatFilter(e.target.value)} aria-label="Nach Kategorie filtern">
+          <option value="all">Alle Kategorien</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select className="input sm:w-44" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
-          <option value="date-desc">Newest first</option>
-          <option value="date-asc">Oldest first</option>
-          <option value="amount-desc">Highest amount</option>
-          <option value="amount-asc">Lowest amount</option>
+        <select className="input sm:w-44" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sortieren">
+          <option value="date-desc">Neueste zuerst</option>
+          <option value="date-asc">Älteste zuerst</option>
+          <option value="amount-desc">Höchster Betrag</option>
+          <option value="amount-asc">Niedrigster Betrag</option>
         </select>
       </div>
 
       {filtered.length === 0 ? (
         <EmptyState
           icon={ReceiptText}
-          title={expenses.length ? 'No matching expenses' : 'No expenses yet'}
-          message={expenses.length ? 'Try adjusting your search or filters.' : 'Add your first expense to get started.'}
+          title={expenses.length ? 'Keine passenden Ausgaben' : 'Noch keine Ausgaben'}
+          message={expenses.length ? 'Passe Suche oder Filter an.' : 'Füge deine erste Ausgabe hinzu, um zu starten.'}
           actionTo={expenses.length ? undefined : '/expenses/add'}
-          actionLabel={expenses.length ? undefined : 'Add expense'}
+          actionLabel={expenses.length ? undefined : 'Ausgabe hinzufügen'}
         />
       ) : (
         <div className="space-y-6">

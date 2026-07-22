@@ -33,7 +33,7 @@ export default function Categories() {
 
   async function save() {
     if (!draft.name.trim()) {
-      setError('Please enter a name.')
+      setError('Bitte gib einen Namen ein.')
       return
     }
     setBusy(true)
@@ -52,8 +52,8 @@ export default function Categories() {
   async function handleDelete(cat) {
     const inUse = expenses.some((e) => e.category_id === cat.id)
     const msg = inUse
-      ? `"${cat.name}" is used by existing expenses. Deleting it will leave those expenses uncategorised. Delete anyway?`
-      : `Delete category "${cat.name}"?`
+      ? `„${cat.name}" wird von bestehenden Ausgaben genutzt. Beim Löschen bleiben diese Ausgaben ohne Kategorie. Trotzdem löschen?`
+      : `Kategorie „${cat.name}" löschen?`
     if (!window.confirm(msg)) return
     try {
       await deleteCategory(cat.id)
@@ -64,9 +64,9 @@ export default function Categories() {
 
   return (
     <div>
-      <PageHeader title="Categories" subtitle="Organise spending with custom names, icons and colours.">
+      <PageHeader title="Kategorien" subtitle="Ausgaben mit eigenen Namen, Icons und Farben ordnen.">
         <button onClick={startNew} className="btn-primary">
-          <Plus className="h-4 w-4" /> New category
+          <Plus className="h-4 w-4" /> Neue Kategorie
         </button>
       </PageHeader>
 
@@ -77,7 +77,7 @@ export default function Categories() {
       )}
 
       {categories.length === 0 && editing !== 'new' ? (
-        <EmptyState icon={Tags} title="No categories yet" message="Create your first category to start tracking." />
+        <EmptyState icon={Tags} title="Noch keine Kategorien" message="Erstelle deine erste Kategorie, um loszulegen." />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((cat) => {
@@ -100,15 +100,15 @@ export default function Categories() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-zinc-100">{cat.name}</p>
                   <p className="text-xs text-zinc-500">
-                    {count} {count === 1 ? 'expense' : 'expenses'}{hasBudget ? ' • budgeted' : ''}
+                    {count} {count === 1 ? 'Ausgabe' : 'Ausgaben'}{hasBudget ? ' • Budget' : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
-                  <button onClick={() => startEdit(cat)} aria-label={`Edit ${cat.name}`}
+                  <button onClick={() => startEdit(cat)} aria-label={`${cat.name} bearbeiten`}
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700 hover:text-zinc-100 cursor-pointer">
                     <Pencil className="h-4 w-4" />
                   </button>
-                  <button onClick={() => handleDelete(cat)} aria-label={`Delete ${cat.name}`}
+                  <button onClick={() => handleDelete(cat)} aria-label={`${cat.name} löschen`}
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -134,7 +134,7 @@ function Editor({ draft, setDraft, onSave, onCancel, busy, error }) {
         <input
           autoFocus
           className="input flex-1"
-          placeholder="Category name"
+          placeholder="Kategoriename"
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
           onKeyDown={(e) => e.key === 'Enter' && onSave()}
@@ -161,11 +161,11 @@ function Editor({ draft, setDraft, onSave, onCancel, busy, error }) {
       </div>
 
       <div className="mt-4">
-        <span className="label">Colour</span>
+        <span className="label">Farbe</span>
         <div className="flex flex-wrap gap-2">
           {COLORS.map((c) => (
             <button key={c} type="button" onClick={() => setDraft({ ...draft, color: c })}
-              aria-label={`Colour ${c}`} aria-pressed={draft.color === c}
+              aria-label={`Farbe ${c}`} aria-pressed={draft.color === c}
               className={`h-8 w-8 rounded-full transition-transform duration-200 cursor-pointer ${
                 draft.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-ink-850' : ''
               }`}
@@ -177,9 +177,9 @@ function Editor({ draft, setDraft, onSave, onCancel, busy, error }) {
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
 
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onCancel} className="btn-ghost"><X className="h-4 w-4" /> Cancel</button>
+        <button onClick={onCancel} className="btn-ghost"><X className="h-4 w-4" /> Abbrechen</button>
         <button onClick={onSave} disabled={busy} className="btn-primary">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Speichern
         </button>
       </div>
     </div>

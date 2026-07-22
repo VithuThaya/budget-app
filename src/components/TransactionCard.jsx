@@ -26,7 +26,7 @@ export default function TransactionCard({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-zinc-100">
-          {title || category?.name || 'Uncategorised'}
+          {title || category?.name || 'Ohne Kategorie'}
         </p>
         <p className="mt-0.5 truncate text-xs text-zinc-500">
           {category?.name ? `${category.name} • ` : ''}{formatDate(date)}
@@ -42,7 +42,7 @@ export default function TransactionCard({
           {editTo && (
             <Link
               to={editTo}
-              aria-label="Edit"
+              aria-label="Bearbeiten"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700 hover:text-zinc-100 cursor-pointer"
             >
               <Pencil className="h-4 w-4" />
@@ -51,7 +51,7 @@ export default function TransactionCard({
           {onDelete && (
             <button
               onClick={onDelete}
-              aria-label="Delete"
+              aria-label="Löschen"
               className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-red-300 cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />

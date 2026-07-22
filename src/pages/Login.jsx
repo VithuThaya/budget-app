@@ -19,13 +19,13 @@ export default function Login() {
       if (mode === 'signup') {
         const { error: err } = await supabase.auth.signUp({ email, password })
         if (err) throw err
-        setNotice('Account created. If email confirmation is on, check your inbox — otherwise you are signed in.')
+        setNotice('Konto erstellt. Wenn E-Mail-Bestätigung aktiv ist, prüfe dein Postfach — sonst bist du bereits angemeldet.')
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password })
         if (err) throw err
       }
     } catch (err) {
-      setError(err.message || 'Something went wrong')
+      setError(err.message || 'Etwas ist schiefgelaufen')
     } finally {
       setBusy(false)
     }
@@ -39,7 +39,7 @@ export default function Login() {
             <Wallet className="h-7 w-7" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Budget</h1>
-          <p className="mt-1 text-sm text-zinc-400">Smart personal finance, synced across your devices.</p>
+          <p className="mt-1 text-sm text-zinc-400">Cleveres Haushaltsbudget, auf all deinen Geräten synchron.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4 p-6">
@@ -53,13 +53,13 @@ export default function Login() {
                   mode === m ? 'bg-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                {m === 'signin' ? 'Sign in' : 'Create account'}
+                {m === 'signin' ? 'Anmelden' : 'Konto erstellen'}
               </button>
             ))}
           </div>
 
           <div>
-            <label htmlFor="email" className="label">Email</label>
+            <label htmlFor="email" className="label">E-Mail</label>
             <input
               id="email" type="email" required autoComplete="email"
               value={email} onChange={(e) => setEmail(e.target.value)}
@@ -67,7 +67,7 @@ export default function Login() {
             />
           </div>
           <div>
-            <label htmlFor="password" className="label">Password</label>
+            <label htmlFor="password" className="label">Passwort</label>
             <input
               id="password" type="password" required minLength={8}
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
@@ -85,12 +85,12 @@ export default function Login() {
 
           <button type="submit" disabled={busy} className="btn-primary w-full">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === 'signin' ? 'Sign in' : 'Create account'}
+            {mode === 'signin' ? 'Anmelden' : 'Konto erstellen'}
           </button>
         </form>
 
         <p className="mt-6 text-center text-xs text-zinc-500">
-          Your data is private to your account and stored securely in Supabase.
+          Deine Daten gehören nur deinem Konto und werden sicher in Supabase gespeichert.
         </p>
       </div>
     </div>
