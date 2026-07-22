@@ -40,17 +40,17 @@ export default function Reports() {
   if (expenses.length === 0) {
     return (
       <div>
-        <PageHeader title="Reports" subtitle="Insights, trends and saving plans." />
-        <EmptyState icon={BarChart3} title="No data to report yet"
-          message="Add a few expenses and your charts, savings potential and monthly story will appear here."
-          actionTo="/expenses/add" actionLabel="Add expense" />
+        <PageHeader title="Berichte" subtitle="Einblicke, Trends und Sparpläne." />
+        <EmptyState icon={BarChart3} title="Noch keine Daten"
+          message="Füge ein paar Ausgaben hinzu, dann erscheinen hier Diagramme, Sparpotenzial und deine Monats-Story."
+          actionTo="/expenses/add" actionLabel="Ausgabe hinzufügen" />
       </div>
     )
   }
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Reports" subtitle={`Insights for ${formatMonthLabel(cursor)}`}>
+      <PageHeader title="Berichte" subtitle={`Einblicke für ${formatMonthLabel(cursor)}`}>
         <MonthSwitcher cursor={cursor} setCursor={setCursor} isCurrent={isCurrent} />
       </PageHeader>
 
@@ -58,11 +58,11 @@ export default function Reports() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {isCurrent && (
           <ComparisonCard
-            title="This week vs last week" icon={CalendarRange}
+            title="Diese Woche vs. Vorwoche" icon={CalendarRange}
             current={compare.week.current} previous={compare.week.previous} />
         )}
         <ComparisonCard
-          title={isCurrent ? 'This month vs last month' : `${formatMonthLabel(cursor)} vs previous month`}
+          title={isCurrent ? 'Dieser Monat vs. Vormonat' : `${formatMonthLabel(cursor)} vs. Vormonat`}
           icon={CalendarRange}
           current={compare.month.current} previous={compare.month.previous} />
       </div>
@@ -71,13 +71,13 @@ export default function Reports() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <PieChart className="h-[18px] w-[18px] text-accent-soft" /> Spending by category
+            <PieChart className="h-[18px] w-[18px] text-accent-soft" /> Ausgaben nach Kategorie
           </h2>
           <PieBreakdown data={pie} />
         </section>
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Daily trend — {formatMonthLabel(cursor)}
+            <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Täglicher Verlauf — {formatMonthLabel(cursor)}
           </h2>
           <TrendLine data={trend} />
         </section>
@@ -87,7 +87,7 @@ export default function Reports() {
       {isCurrent && (
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Weekly comparison (8 weeks)
+            <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Wochenvergleich (8 Wochen)
           </h2>
           <WeeklyBars data={weekly} height={260} />
         </section>
@@ -99,20 +99,20 @@ export default function Reports() {
       <section className="card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-            <PiggyBank className="h-[18px] w-[18px] text-accent-soft" /> Savings Potential
+            <PiggyBank className="h-[18px] w-[18px] text-accent-soft" /> Sparpotenzial
           </h2>
           <span className="chip bg-good/10 text-green-300">
-            Up to <Money value={potential.totalSaving} className="ml-1" /> / mo
+            Bis zu <Money value={potential.totalSaving} className="ml-1" /> / Mt.
           </span>
         </div>
         {potential.items.length === 0 ? (
-          <p className="text-sm text-zinc-500">No discretionary spending detected this month — nothing obvious to trim.</p>
+          <p className="text-sm text-zinc-500">Keine flexiblen Ausgaben diesen Monat erkannt — nichts Offensichtliches zum Kürzen.</p>
         ) : (
           <>
             <p className="mb-4 text-sm text-zinc-400">
-              If you trimmed flexible categories this month, you could save about{' '}
+              Wenn du flexible Kategorien diesen Monat kürzt, könntest du etwa{' '}
               <span className="font-semibold text-green-300">{formatCHF(potential.totalSaving)}</span>{' '}
-              ({formatPct(potential.pctOfSpend)} of your spend).
+              sparen ({formatPct(potential.pctOfSpend)} deiner Ausgaben).
             </p>
             <div className="space-y-4">
               {potential.items.map((it) => (
@@ -122,7 +122,7 @@ export default function Reports() {
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: it.color }} />
                       <span className="truncate text-sm text-zinc-300">{it.name}</span>
                     </span>
-                    <span className="shrink-0 text-xs font-medium text-green-300">save <Money value={it.saving} /></span>
+                    <span className="shrink-0 text-xs font-medium text-green-300">spare <Money value={it.saving} /></span>
                   </div>
                   <div className="mt-1.5 flex items-center gap-3">
                     <div className="flex-1"><ProgressBar ratio={it.suggested / it.current} color={it.color} /></div>
@@ -140,12 +140,12 @@ export default function Reports() {
       {/* Saving plans */}
       <section className="card p-5">
         <h2 className="mb-1 flex items-center gap-2 font-semibold text-zinc-100">
-          <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Saving Plan Generator
+          <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Sparplan-Generator
         </h2>
-        <p className="mb-4 text-sm text-zinc-400">Personalised caps based on your real spending pace. Updates as you add expenses.</p>
+        <p className="mb-4 text-sm text-zinc-400">Persönliche Limits auf Basis deines echten Ausgabentempos. Aktualisiert sich mit jeder Ausgabe.</p>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <PlanCard title="7-day plan" plan={plans.week} />
-          <PlanCard title="30-day plan" plan={plans.month} />
+          <PlanCard title="7-Tage-Plan" plan={plans.week} />
+          <PlanCard title="30-Tage-Plan" plan={plans.month} />
         </div>
       </section>
       </>
@@ -200,7 +200,7 @@ function ComparisonCard({ title, icon: Icon, current, previous }) {
       </div>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
         <span className="text-2xl font-semibold text-zinc-50"><Money value={current} /></span>
-        <span className="pb-1 text-xs text-zinc-500">vs <Money value={previous} /> before</span>
+        <span className="pb-1 text-xs text-zinc-500">vs. <Money value={previous} /> zuvor</span>
       </div>
     </div>
   )
@@ -211,7 +211,7 @@ function PlanCard({ title, plan }) {
     return (
       <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4">
         <h3 className="font-medium text-zinc-200">{title}</h3>
-        <p className="mt-2 text-sm text-zinc-500">Not enough spending history yet.</p>
+        <p className="mt-2 text-sm text-zinc-500">Noch nicht genug Ausgaben-Historie.</p>
       </div>
     )
   }
@@ -219,10 +219,10 @@ function PlanCard({ title, plan }) {
     <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-zinc-200">{title}</h3>
-        <span className="chip bg-good/10 text-green-300">save <Money value={plan.projectedSavings} /></span>
+        <span className="chip bg-good/10 text-green-300">spare <Money value={plan.projectedSavings} /></span>
       </div>
       <p className="mt-1 text-xs text-zinc-500">
-        Target spend <Money value={plan.projectedSpend} /> vs <Money value={plan.baselineSpend} /> at current pace
+        Zielausgabe <Money value={plan.projectedSpend} /> statt <Money value={plan.baselineSpend} /> beim aktuellen Tempo
       </p>
       <div className="mt-3 space-y-2.5">
         {plan.lines.slice(0, 5).map((l) => {
@@ -233,7 +233,7 @@ function PlanCard({ title, plan }) {
               <span className="min-w-0 flex-1 truncate text-zinc-300">{l.name}</span>
               <span className="shrink-0 text-right text-xs leading-tight">
                 <span className="block tabular-nums text-zinc-400">
-                  cap <span className="font-medium text-zinc-200"><Money value={l.cap} /></span>
+                  Limit <span className="font-medium text-zinc-200"><Money value={l.cap} /></span>
                 </span>
                 <span className="block text-amber-300">
                   −{Math.round(l.reductionPct * 100)}% (<Money value={l.saving} />)
@@ -266,7 +266,7 @@ function MonthlyStory({ story, cursor }) {
       link.click()
     } catch (e) {
       console.error('Export failed', e)
-      alert('Could not export the image. Please try again.')
+      alert('Bild konnte nicht exportiert werden. Bitte versuche es erneut.')
     } finally {
       setBusy(false)
     }
@@ -276,10 +276,10 @@ function MonthlyStory({ story, cursor }) {
     <section className="card p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-          <Trophy className="h-[18px] w-[18px] text-accent-soft" /> Monthly Financial Story
+          <Trophy className="h-[18px] w-[18px] text-accent-soft" /> Monatliche Finanz-Story
         </h2>
         <button onClick={exportPng} disabled={busy} className="btn-ghost">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Exportieren
         </button>
       </div>
 
@@ -287,11 +287,11 @@ function MonthlyStory({ story, cursor }) {
       <div ref={ref} className="overflow-hidden rounded-2xl border border-ink-700 bg-gradient-to-br from-ink-900 to-ink-850 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-accent-soft">Monthly Story</p>
+            <p className="text-xs font-medium uppercase tracking-widest text-accent-soft">Monats-Story</p>
             <h3 className="text-xl font-semibold text-zinc-50">{formatMonthLabel(cursor)}</h3>
           </div>
           <div className="text-right">
-            <p className="stat-label">Net</p>
+            <p className="stat-label">Netto</p>
             <p className={`text-lg font-semibold ${story.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
               <Money value={story.net} signed />
             </p>
@@ -299,26 +299,26 @@ function MonthlyStory({ story, cursor }) {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StoryStat label="Total spent" value={formatCHF(story.totalSpent)} />
-          <StoryStat label="Total income" value={formatCHF(story.totalIncome)} />
-          <StoryStat label="Daily average" value={formatCHF(story.dailyAvg)} />
-          <StoryStat label="Transactions" value={String(story.transactionCount)} />
+          <StoryStat label="Ausgegeben gesamt" value={formatCHF(story.totalSpent)} />
+          <StoryStat label="Einnahmen gesamt" value={formatCHF(story.totalIncome)} />
+          <StoryStat label="Tagesschnitt" value={formatCHF(story.dailyAvg)} />
+          <StoryStat label="Buchungen" value={String(story.transactionCount)} />
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <HighlightRow icon={TrendingDown} tint="#ef4444"
-            label="Top spending day"
+            label="Teuerster Tag"
             value={story.topDay ? `${story.topDay.label}` : '—'}
             sub={story.topDay ? formatCHF(story.topDay.amount) : ''} />
           <HighlightRow icon={CalendarCheck} tint="#22c55e"
-            label={story.bestSavingDay ? 'Biggest saving day' : 'No-spend days'}
-            value={story.bestSavingDay ? story.bestSavingDay.label : `${story.noSpendDays} days`}
-            sub={story.bestSavingDay ? formatCHF(story.bestSavingDay.amount) : 'No spending'} />
+            label={story.bestSavingDay ? 'Bester Spartag' : 'Ausgabenfreie Tage'}
+            value={story.bestSavingDay ? story.bestSavingDay.label : `${story.noSpendDays} Tage`}
+            sub={story.bestSavingDay ? formatCHF(story.bestSavingDay.amount) : 'Keine Ausgaben'} />
         </div>
 
         {story.topCategory && (
           <div className="mt-3 rounded-xl border border-ink-700 bg-ink-900/60 p-3">
-            <p className="stat-label">Biggest category</p>
+            <p className="stat-label">Größte Kategorie</p>
             <div className="mt-1.5 flex items-center gap-2">
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: story.topCategory.color }} />
               <span className="font-medium text-zinc-100">{story.topCategory.name}</span>
@@ -329,8 +329,8 @@ function MonthlyStory({ story, cursor }) {
 
         <p className="mt-4 text-xs text-zinc-500">
           {story.savingsRate !== null
-            ? `You saved ${formatPct(Math.max(0, story.savingsRate))} of your income this month.`
-            : `Projected month-end spend ≈ ${formatCHF(story.projectedMonth)} at your current pace.`}
+            ? `Du hast diesen Monat ${formatPct(Math.max(0, story.savingsRate))} deines Einkommens gespart.`
+            : `Voraussichtliche Ausgaben zum Monatsende ≈ ${formatCHF(story.projectedMonth)} beim aktuellen Tempo.`}
         </p>
       </div>
     </section>

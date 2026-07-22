@@ -51,7 +51,7 @@ export default function Savings() {
   }
 
   async function save() {
-    if (!draft.name.trim()) return setError('Please enter a name.')
+    if (!draft.name.trim()) return setError('Bitte gib einen Namen ein.')
     const payload = {
       name: draft.name.trim(),
       icon: draft.icon,
@@ -73,7 +73,7 @@ export default function Savings() {
   }
 
   async function handleDelete(goal) {
-    if (!window.confirm(`Delete savings goal "${goal.name}"? This also removes its contributions.`)) return
+    if (!window.confirm(`Sparziel „${goal.name}" löschen? Damit werden auch die Einzahlungen entfernt.`)) return
     try {
       await deleteSavingsGoal(goal.id)
     } catch (e) {
@@ -83,26 +83,26 @@ export default function Savings() {
 
   return (
     <div>
-      <PageHeader title="Savings" subtitle="Set goals, pay into your pots and watch them grow.">
-        <button onClick={startNew} className="btn-primary"><Plus className="h-4 w-4" /> New goal</button>
+      <PageHeader title="Sparen" subtitle="Ziele setzen, in deine Töpfe einzahlen und sie wachsen sehen.">
+        <button onClick={startNew} className="btn-primary"><Plus className="h-4 w-4" /> Neues Ziel</button>
       </PageHeader>
 
       {/* Summary */}
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="grid grid-cols-2 gap-3 lg:col-span-1 lg:grid-cols-1 lg:gap-4">
           <div className="card p-4">
-            <span className="stat-label">Total saved</span>
+            <span className="stat-label">Gesamt gespart</span>
             <div className="mt-1.5 truncate text-xl font-semibold text-green-400 sm:text-2xl"><Money value={saved} /></div>
           </div>
           <div className="card p-4">
-            <span className="stat-label">Saved this month</span>
+            <span className="stat-label">Diesen Monat gespart</span>
             <div className="mt-1.5 truncate text-xl font-semibold text-zinc-100 sm:text-2xl"><Money value={savedMonth} /></div>
           </div>
         </div>
         {pie.length > 0 && (
           <section className="card p-5 lg:col-span-2">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-              <PiggyBank className="h-[18px] w-[18px] text-accent-soft" /> How your savings are split
+              <PiggyBank className="h-[18px] w-[18px] text-accent-soft" /> So verteilt sich dein Sparen
             </h2>
             <PieBreakdown data={pie} />
           </section>
@@ -116,8 +116,8 @@ export default function Savings() {
       )}
 
       {savingsGoals.length === 0 && editing !== 'new' ? (
-        <EmptyState icon={PiggyBank} title="No savings goals yet"
-          message="Create a pot like “Holiday”, “Emergency fund” or “New car” and start paying into it." />
+        <EmptyState icon={PiggyBank} title="Noch keine Sparziele"
+          message="Erstelle einen Topf wie „Ferien“, „Notgroschen“ oder „Neues Auto“ und zahle ein." />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {savingsGoals.map((goal) => {
@@ -188,16 +188,16 @@ function GoalCard({ goal, onEdit, onDelete }) {
           <p className="truncate font-medium text-zinc-100">{goal.name}</p>
           <p className="mt-0.5 text-xs text-zinc-500">
             {p.hasTarget
-              ? <>{formatCHF(p.balance)} <span className="text-zinc-600">of</span> {formatCHF(p.target)}</>
-              : <span className="text-zinc-400">Open pot · {formatCHF(p.balance)} saved</span>}
+              ? <>{formatCHF(p.balance)} <span className="text-zinc-600">von</span> {formatCHF(p.target)}</>
+              : <span className="text-zinc-400">Offener Topf · {formatCHF(p.balance)} gespart</span>}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button onClick={onEdit} aria-label={`Edit ${goal.name}`}
+          <button onClick={onEdit} aria-label={`${goal.name} bearbeiten`}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700 hover:text-zinc-100 cursor-pointer">
             <Pencil className="h-4 w-4" />
           </button>
-          <button onClick={onDelete} aria-label={`Delete ${goal.name}`}
+          <button onClick={onDelete} aria-label={`${goal.name} löschen`}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
             <Trash2 className="h-4 w-4" />
           </button>
@@ -209,7 +209,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
         <div className="mt-4">
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className={p.done ? 'font-medium text-green-300' : 'text-zinc-400'}>
-              {p.done ? '🎉 Goal reached!' : `${formatCHF(p.remaining)} to go`}
+              {p.done ? '🎉 Ziel erreicht!' : `noch ${formatCHF(p.remaining)}`}
             </span>
             <span className="tabular-nums text-zinc-400">{Math.round(p.pct * 100)}%</span>
           </div>
@@ -223,12 +223,12 @@ function GoalCard({ goal, onEdit, onDelete }) {
           {goal.target_date && (
             <span className="flex items-center gap-1.5">
               <CalendarClock className="h-3.5 w-3.5" />
-              {p.overdue ? 'Target date passed' : `${p.monthsLeft} ${p.monthsLeft === 1 ? 'month' : 'months'} left`}
+              {p.overdue ? 'Zieldatum überschritten' : `noch ${p.monthsLeft} ${p.monthsLeft === 1 ? 'Monat' : 'Monate'}`}
             </span>
           )}
           {p.neededPerMonth != null && (
             <span className="tabular-nums">
-              <span className="font-medium text-zinc-300">{formatCHF(p.neededPerMonth)}</span>/mo needed
+              <span className="font-medium text-zinc-300">{formatCHF(p.neededPerMonth)}</span>/Mt. nötig
             </span>
           )}
         </div>
@@ -238,7 +238,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
       {p.monthlyTarget != null && p.monthlyTarget > 0 && (
         <div className="mt-3 rounded-xl border border-ink-700 bg-ink-900/50 p-3">
           <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className="text-zinc-400">This month's plan</span>
+            <span className="text-zinc-400">Plan diesen Monat</span>
             <span className="tabular-nums text-zinc-300">{formatCHF(p.savedThisMonth)} / {formatCHF(p.monthlyTarget)}</span>
           </div>
           <ProgressBar ratio={p.monthlyPct} color="#22c55e" />
@@ -250,24 +250,24 @@ function GoalCard({ goal, onEdit, onDelete }) {
         {adding ? (
           <form onSubmit={handleAdd} className="space-y-3 rounded-xl border border-ink-700 bg-ink-900/50 p-3">
             <div className="grid grid-cols-2 gap-2">
-              <input inputMode="decimal" autoFocus className="input" placeholder="Amount (CHF)"
+              <input inputMode="decimal" autoFocus className="input" placeholder="Betrag (CHF)"
                 value={amount} onChange={(e) => setAmount(e.target.value)} />
               <input type="date" className="input" value={date} max={todayISO()}
                 onChange={(e) => setDate(e.target.value)} />
             </div>
-            <input className="input" placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+            <input className="input" placeholder="Notiz (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
             {error && <p className="text-xs text-red-300">{error}</p>}
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => { setAdding(false); setError(null) }} className="btn-ghost">Cancel</button>
+              <button type="button" onClick={() => { setAdding(false); setError(null) }} className="btn-ghost">Abbrechen</button>
               <button type="submit" disabled={busy} className="btn-primary">
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Add money
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Einzahlen
               </button>
             </div>
           </form>
         ) : (
           <button onClick={() => setAdding(true)}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink-700 py-2.5 text-sm font-medium text-zinc-300 transition-colors duration-200 hover:border-accent hover:text-accent-soft cursor-pointer">
-            <Wallet className="h-4 w-4" /> Add money
+            <Wallet className="h-4 w-4" /> Einzahlen
           </button>
         )}
       </div>
@@ -281,8 +281,8 @@ function GoalCard({ goal, onEdit, onDelete }) {
                 <span className="text-zinc-500">{formatDate(c.date)}</span>
                 {c.notes && <span className="min-w-0 flex-1 truncate text-xs text-zinc-500">· {c.notes}</span>}
                 <span className={`tabular-nums text-green-400 ${c.notes ? '' : 'ml-auto'}`}>+<Money value={c.amount} /></span>
-                <button onClick={() => window.confirm('Delete this contribution?') && deleteContribution(c.id)}
-                  aria-label="Delete contribution"
+                <button onClick={() => window.confirm('Diese Einzahlung löschen?') && deleteContribution(c.id)}
+                  aria-label="Einzahlung löschen"
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-500 opacity-0 transition-opacity duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer group-hover:opacity-100 focus:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -293,7 +293,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
             <button onClick={() => setShowAll((v) => !v)}
               className="mt-2 flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
               <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showAll ? 'rotate-180' : ''}`} />
-              {showAll ? 'Show less' : `Show all ${contributions.length}`}
+              {showAll ? 'Weniger anzeigen' : `Alle ${contributions.length} anzeigen`}
             </button>
           )}
         </div>
@@ -312,24 +312,24 @@ function GoalEditor({ draft, setDraft, onSave, onCancel, busy, error }) {
           style={{ backgroundColor: `${draft.color}22`, color: draft.color }}>
           <Preview className="h-6 w-6" />
         </span>
-        <input autoFocus className="input flex-1" placeholder="Goal name (e.g. Holiday)"
+        <input autoFocus className="input flex-1" placeholder="Zielname (z. B. Ferien)"
           value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label className="label">Target amount (optional)</label>
-          <input inputMode="decimal" className="input" placeholder="e.g. 3000"
+          <label className="label">Zielbetrag (optional)</label>
+          <input inputMode="decimal" className="input" placeholder="z. B. 3000"
             value={draft.target_amount} onChange={(e) => setDraft({ ...draft, target_amount: e.target.value })} />
         </div>
         <div>
-          <label className="label">Target date (optional)</label>
+          <label className="label">Zieldatum (optional)</label>
           <input type="date" className="input" value={draft.target_date} min={todayISO()}
             onChange={(e) => setDraft({ ...draft, target_date: e.target.value })} />
         </div>
         <div>
-          <label className="label">Planned / month (optional)</label>
-          <input inputMode="decimal" className="input" placeholder="e.g. 300"
+          <label className="label">Geplant / Monat (optional)</label>
+          <input inputMode="decimal" className="input" placeholder="z. B. 300"
             value={draft.monthly_target} onChange={(e) => setDraft({ ...draft, monthly_target: e.target.value })} />
         </div>
       </div>
@@ -354,11 +354,11 @@ function GoalEditor({ draft, setDraft, onSave, onCancel, busy, error }) {
       </div>
 
       <div className="mt-4">
-        <span className="label">Colour</span>
+        <span className="label">Farbe</span>
         <div className="flex flex-wrap gap-2">
           {COLORS.map((c) => (
             <button key={c} type="button" onClick={() => setDraft({ ...draft, color: c })}
-              aria-label={`Colour ${c}`} aria-pressed={draft.color === c}
+              aria-label={`Farbe ${c}`} aria-pressed={draft.color === c}
               className={`h-8 w-8 rounded-full transition-transform duration-200 cursor-pointer ${
                 draft.color === c ? 'ring-2 ring-white ring-offset-2 ring-offset-ink-850' : ''
               }`}
@@ -370,9 +370,9 @@ function GoalEditor({ draft, setDraft, onSave, onCancel, busy, error }) {
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
 
       <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onCancel} className="btn-ghost"><X className="h-4 w-4" /> Cancel</button>
+        <button onClick={onCancel} className="btn-ghost"><X className="h-4 w-4" /> Abbrechen</button>
         <button onClick={onSave} disabled={busy} className="btn-primary">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Speichern
         </button>
       </div>
     </div>
