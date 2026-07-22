@@ -7,14 +7,14 @@ import {
 import { supabase } from '../lib/supabase'
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/expenses', label: 'Expenses', icon: ReceiptText },
-  { to: '/incomes', label: 'Incomes', icon: TrendingUp },
-  { to: '/fixed-costs', label: 'Fixed costs', icon: CalendarClock },
-  { to: '/savings', label: 'Savings', icon: PiggyBank },
+  { to: '/', label: 'Übersicht', icon: LayoutDashboard, end: true },
+  { to: '/expenses', label: 'Ausgaben', icon: ReceiptText },
+  { to: '/incomes', label: 'Einnahmen', icon: TrendingUp },
+  { to: '/fixed-costs', label: 'Fixkosten', icon: CalendarClock },
+  { to: '/savings', label: 'Sparen', icon: PiggyBank },
   { to: '/budgets', label: 'Budgets', icon: Target },
-  { to: '/categories', label: 'Categories', icon: Tags },
-  { to: '/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/categories', label: 'Kategorien', icon: Tags },
+  { to: '/reports', label: 'Berichte', icon: BarChart3 },
 ]
 
 function NavItems({ onNavigate }) {
@@ -66,7 +66,7 @@ export default function Layout({ session }) {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink-800 bg-ink-900/80 px-4 py-3 backdrop-blur lg:hidden">
         <Brand compact />
         <button
-          aria-label="Open menu"
+          aria-label="Menü öffnen"
           onClick={() => setOpen(true)}
           className="flex h-11 w-11 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-zinc-200 cursor-pointer"
         >
@@ -82,7 +82,7 @@ export default function Layout({ session }) {
             <div className="flex items-center justify-between">
               <Brand />
               <button
-                aria-label="Close menu"
+                aria-label="Menü schließen"
                 onClick={() => setOpen(false)}
                 className="flex h-11 w-11 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-zinc-200 cursor-pointer"
               >
@@ -110,7 +110,7 @@ export default function Layout({ session }) {
         className="fixed bottom-6 right-5 z-40 flex h-14 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-white shadow-glow transition-colors duration-200 hover:bg-accent-soft cursor-pointer sm:right-8"
       >
         <Plus className="h-5 w-5" />
-        <span className="hidden sm:inline">Add expense</span>
+        <span className="hidden sm:inline">Ausgabe</span>
       </button>
     </div>
   )
@@ -134,7 +134,7 @@ function UserFooter({ email, onSignOut }) {
       <div className="mb-2 truncate px-1 text-xs text-zinc-500" title={email}>{email}</div>
       <button onClick={onSignOut} className="btn-ghost w-full justify-start">
         <LogOut className="h-4 w-4" />
-        Sign out
+        Abmelden
       </button>
     </div>
   )

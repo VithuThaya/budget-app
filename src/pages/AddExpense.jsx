@@ -41,11 +41,11 @@ export default function AddExpense() {
     e.preventDefault()
     const value = parseAmount(amount)
     if (value <= 0) {
-      setError('Enter an amount greater than zero.')
+      setError('Gib einen Betrag größer als null ein.')
       return
     }
     if (!categoryId) {
-      setError('Pick a category.')
+      setError('Wähle eine Kategorie.')
       return
     }
     setBusy(true)
@@ -68,14 +68,14 @@ export default function AddExpense() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title={isEdit ? 'Edit expense' : 'Add expense'} subtitle="Record what you spent and where it belongs.">
-        <Link to="/expenses" className="btn-ghost"><ArrowLeft className="h-4 w-4" /> Back</Link>
+      <PageHeader title={isEdit ? 'Ausgabe bearbeiten' : 'Ausgabe hinzufügen'} subtitle="Erfasse, was du ausgegeben hast und wohin es gehört.">
+        <Link to="/expenses" className="btn-ghost"><ArrowLeft className="h-4 w-4" /> Zurück</Link>
       </PageHeader>
 
       <form onSubmit={handleSubmit} className="card space-y-5 p-5 sm:p-6">
         {/* Amount */}
         <div>
-          <label htmlFor="amount" className="label">Amount (CHF)</label>
+          <label htmlFor="amount" className="label">Betrag (CHF)</label>
           <div className="relative">
             <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-zinc-500">CHF</span>
             <input
@@ -90,7 +90,7 @@ export default function AddExpense() {
 
         {/* Category */}
         <div>
-          <span className="label">Category</span>
+          <span className="label">Kategorie</span>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
             {categories.map((cat) => {
               const Icon = iconFor(cat.icon)
@@ -113,33 +113,33 @@ export default function AddExpense() {
           </div>
           {categories.length === 0 && (
             <p className="mt-2 text-sm text-zinc-500">
-              No categories yet. <Link to="/categories" className="text-accent-soft underline">Create one</Link>.
+              Noch keine Kategorien. <Link to="/categories" className="text-accent-soft underline">Erstelle eine</Link>.
             </p>
           )}
         </div>
 
         {/* Date */}
         <div>
-          <label htmlFor="date" className="label">Date</label>
+          <label htmlFor="date" className="label">Datum</label>
           <input id="date" type="date" className="input" value={date} max={todayISO()}
             onChange={(e) => setDate(e.target.value)} />
         </div>
 
         {/* Notes */}
         <div>
-          <label htmlFor="notes" className="label">Notes (optional)</label>
+          <label htmlFor="notes" className="label">Notiz (optional)</label>
           <textarea id="notes" rows={3} className="input resize-none"
-            placeholder="e.g. Netflix subscription, lunch with team…"
+            placeholder="z. B. Mittagessen, Kaffee mit dem Team…"
             value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
 
         {error && <p className="rounded-lg border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-red-300">{error}</p>}
 
         <div className="flex justify-end gap-2 pt-1">
-          <Link to="/expenses" className="btn-ghost">Cancel</Link>
+          <Link to="/expenses" className="btn-ghost">Abbrechen</Link>
           <button type="submit" disabled={busy} className="btn-primary">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {isEdit ? 'Save changes' : 'Add expense'}
+            {isEdit ? 'Änderungen speichern' : 'Ausgabe hinzufügen'}
           </button>
         </div>
       </form>

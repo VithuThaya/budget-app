@@ -72,43 +72,43 @@ export default function Dashboard() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-[1.65rem]">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-400">{formatMonthLabel()} overview</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-[1.65rem]">Übersicht</h1>
+        <p className="mt-1 text-sm text-zinc-400">{formatMonthLabel()} im Überblick</p>
       </div>
 
       {/* Stat row */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Income this month" value={incomeMonth} icon={TrendingUp} accent="#22c55e" />
-        <StatCard label="Fixed costs / mo" value={fixedMonth} icon={CalendarClock} accent="#f59e0b" />
-        <StatCard label="Spent this month" value={spentMonth} icon={TrendingDown} accent="#ef4444" />
-        <StatCard label={leftToSpend >= 0 ? 'Left to spend' : 'Over budget'} value={leftToSpend} icon={Wallet} accent="#2563eb" />
+        <StatCard label="Einnahmen diesen Monat" value={incomeMonth} icon={TrendingUp} accent="#22c55e" />
+        <StatCard label="Fixkosten / Mt." value={fixedMonth} icon={CalendarClock} accent="#f59e0b" />
+        <StatCard label="Ausgegeben diesen Monat" value={spentMonth} icon={TrendingDown} accent="#ef4444" />
+        <StatCard label={leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget'} value={leftToSpend} icon={Wallet} accent="#2563eb" />
       </div>
 
       {/* Available-to-spend breakdown */}
       <section className="card mt-5 p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-            <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Available to spend
+            <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Verfügbar zum Ausgeben
           </h2>
           <span className="text-xs text-zinc-500">{formatMonthLabel()}</span>
         </div>
         <div className="space-y-2.5 text-sm">
-          <BreakdownRow label="Income this month" value={incomeMonth} tone="pos" />
-          <BreakdownRow label="Fixed costs" value={-fixedMonth} tone="neg" linkTo="/fixed-costs" />
+          <BreakdownRow label="Einnahmen diesen Monat" value={incomeMonth} tone="pos" />
+          <BreakdownRow label="Fixkosten" value={-fixedMonth} tone="neg" linkTo="/fixed-costs" />
           <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-medium text-zinc-100">
-            <span>Available</span>
+            <span>Verfügbar</span>
             <Money value={available} className="text-base font-semibold" />
           </div>
-          <BreakdownRow label="Spent this month" value={-spentMonth} tone="neg" />
-          {savedMonth > 0 && <BreakdownRow label="Saved this month" value={-savedMonth} tone="neg" linkTo="/savings" />}
+          <BreakdownRow label="Ausgegeben diesen Monat" value={-spentMonth} tone="neg" />
+          {savedMonth > 0 && <BreakdownRow label="Diesen Monat gespart" value={-savedMonth} tone="neg" linkTo="/savings" />}
           <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
-            <span className="text-zinc-100">Left to spend</span>
+            <span className="text-zinc-100">Übrig zum Ausgeben</span>
             <Money value={leftToSpend} className={`text-lg font-bold ${leftToSpend >= 0 ? 'text-green-400' : 'text-red-300'}`} />
           </div>
         </div>
         {incomeMonth === 0 && (
           <p className="mt-3 text-xs text-zinc-500">
-            No income recorded this month yet — add income on the Incomes page for an accurate picture.
+            Noch keine Einnahmen diesen Monat — trage sie unter „Einnahmen" ein, für ein genaues Bild.
           </p>
         )}
       </section>
@@ -118,16 +118,16 @@ export default function Dashboard() {
         <section className="card p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-              <CalendarDays className="h-[18px] w-[18px] text-accent-soft" /> Weekly spending
+              <CalendarDays className="h-[18px] w-[18px] text-accent-soft" /> Wöchentliche Ausgaben
             </h2>
-            <Link to="/reports" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">View reports</Link>
+            <Link to="/reports" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">Berichte ansehen</Link>
           </div>
           <WeeklyBars data={weekly} height={220} />
         </section>
 
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Spending Advisor
+            <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Ausgaben-Berater
           </h2>
           <div className="space-y-2.5">
             {alerts.slice(0, 4).map((a) => (
@@ -142,14 +142,14 @@ export default function Dashboard() {
         <section className="card p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-              <Target className="h-[18px] w-[18px] text-accent-soft" /> Budget status
+              <Target className="h-[18px] w-[18px] text-accent-soft" /> Budget-Status
             </h2>
-            <Link to="/budgets" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">Manage</Link>
+            <Link to="/budgets" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">Verwalten</Link>
           </div>
           {budgetStatus.length === 0 ? (
-            <EmptyState icon={Target} title="No budgets set"
-              message="Set monthly limits to track your progress."
-              actionTo="/budgets" actionLabel="Set budgets" />
+            <EmptyState icon={Target} title="Keine Budgets gesetzt"
+              message="Lege monatliche Limits fest, um deinen Fortschritt zu verfolgen."
+              actionTo="/budgets" actionLabel="Budgets festlegen" />
           ) : (
             <div className="space-y-4">
               {budgetStatus.map(({ cat, budget, used, ratio }) => {
@@ -174,14 +174,14 @@ export default function Dashboard() {
 
         <section className="card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold text-zinc-100">Recent transactions</h2>
+            <h2 className="font-semibold text-zinc-100">Letzte Buchungen</h2>
             <Link to="/expenses" className="flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
-              View all <ArrowRight className="h-3 w-3" />
+              Alle ansehen <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
           {recent.length === 0 ? (
-            <EmptyState title="No expenses yet" message="Add your first expense to see it here."
-              actionTo="/expenses/add" actionLabel="Add expense" />
+            <EmptyState title="Noch keine Ausgaben" message="Füge deine erste Ausgabe hinzu, um sie hier zu sehen."
+              actionTo="/expenses/add" actionLabel="Ausgabe hinzufügen" />
           ) : (
             <div className="space-y-2">
               {recent.map((e) => (
@@ -192,7 +192,7 @@ export default function Dashboard() {
                   date={e.date}
                   category={categoryMap.get(e.category_id)}
                   editTo={`/expenses/${e.id}/edit`}
-                  onDelete={() => window.confirm('Delete this expense?') && deleteExpense(e.id)}
+                  onDelete={() => window.confirm('Diese Ausgabe löschen?') && deleteExpense(e.id)}
                 />
               ))}
             </div>
