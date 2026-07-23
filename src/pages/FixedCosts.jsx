@@ -139,52 +139,54 @@ export default function FixedCosts() {
             const openThisMonth = isFixedOpenThisMonth(fc)
             return (
               <div key={fc.id}
-                className={`flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-850/60 px-3.5 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${inactive ? 'opacity-50' : ''}`}>
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
-                  <CalendarClock className="h-5 w-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-sm font-medium text-zinc-100">{fc.name}</p>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-100">
-                      <Money value={fc.amount} /> <span className="text-xs font-normal text-zinc-500">/{shortFor(fc.period)}</span>
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
-                    <span className="chip bg-accent/10 text-accent-soft">{labelFor(fc.period)}</span>
-                    {!inactive && paidThisMonth && <span className="chip bg-good/10 text-green-300">bezahlt</span>}
-                    {!inactive && !paidThisMonth && openThisMonth && <span className="chip bg-amber-500/10 text-amber-300">offen</span>}
-                    {inactive && <span className="chip bg-ink-800 text-zinc-400">pausiert</span>}
-                    {showMonthly && (
-                      <span className="shrink-0 tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/Mt.</span>
-                    )}
-                    {fc.notes && <span className="truncate">· {fc.notes}</span>}
+                className={`rounded-xl border border-ink-800 bg-ink-850/60 px-3 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${inactive ? 'opacity-50' : ''}`}>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
+                    <CalendarClock className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-100">{fc.name}</p>
+                      <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-100">
+                        <Money value={fc.amount} /><span className="ml-0.5 text-xs font-normal text-zinc-500">/{shortFor(fc.period)}</span>
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-zinc-500">
+                      <span className="chip bg-accent/10 text-accent-soft">{labelFor(fc.period)}</span>
+                      {!inactive && paidThisMonth && <span className="chip bg-good/10 text-green-300">bezahlt</span>}
+                      {!inactive && !paidThisMonth && openThisMonth && <span className="chip bg-amber-500/10 text-amber-300">offen</span>}
+                      {inactive && <span className="chip bg-ink-800 text-zinc-400">pausiert</span>}
+                      {showMonthly && <span className="tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/Mt.</span>}
+                    </div>
+                    {fc.notes && <p className="mt-1 truncate text-xs text-zinc-500">{fc.notes}</p>}
                   </div>
                 </div>
-                {!inactive && (
-                  <button onClick={() => togglePaid(fc)}
-                    aria-label={paidThisMonth ? `Als offen markieren (${formatMonthLabel()})` : `Als bezahlt markieren (${formatMonthLabel()})`}
-                    title={paidThisMonth ? `Diesen Monat bezahlt — klicken zum Rückgängig` : `Als bezahlt markieren (${formatMonthLabel()})`}
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors duration-200 cursor-pointer ${
-                      paidThisMonth
-                        ? 'border-good/40 bg-good/15 text-green-300'
-                        : 'border-ink-700 text-zinc-500 hover:border-good/40 hover:bg-good/10 hover:text-green-300'
+                <div className="mt-2.5 flex items-center justify-end gap-1.5 border-t border-ink-800/70 pt-2.5">
+                  {!inactive && (
+                    <button onClick={() => togglePaid(fc)}
+                      aria-label={paidThisMonth ? `Als offen markieren (${formatMonthLabel()})` : `Als bezahlt markieren (${formatMonthLabel()})`}
+                      title={paidThisMonth ? 'Diesen Monat bezahlt — klicken zum Rückgängig' : `Als bezahlt markieren (${formatMonthLabel()})`}
+                      className={`mr-auto flex h-9 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors duration-200 cursor-pointer ${
+                        paidThisMonth
+                          ? 'border-good/40 bg-good/15 text-green-300'
+                          : 'border-ink-700 text-zinc-400 hover:border-good/40 hover:bg-good/10 hover:text-green-300'
+                      }`}>
+                      <Check className="h-4 w-4" /> {paidThisMonth ? 'Bezahlt' : 'Als bezahlt'}
+                    </button>
+                  )}
+                  <button onClick={() => updateFixedCost(fc.id, { active: inactive })}
+                    aria-label={inactive ? 'Fixkosten fortsetzen' : 'Fixkosten pausieren'}
+                    title={inactive ? 'Fortsetzen (wieder zählen)' : 'Pausieren (nicht mehr zählen)'}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 cursor-pointer ${
+                      inactive ? 'text-zinc-500 hover:bg-good/15 hover:text-green-300' : 'text-amber-400 hover:bg-amber-500/15'
                     }`}>
-                    <Check className="h-4 w-4" />
+                    <Power className="h-4 w-4" />
                   </button>
-                )}
-                <button onClick={() => updateFixedCost(fc.id, { active: inactive })}
-                  aria-label={inactive ? 'Fixkosten fortsetzen' : 'Fixkosten pausieren'}
-                  title={inactive ? 'Fortsetzen (wieder zählen)' : 'Pausieren (nicht mehr zählen)'}
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 cursor-pointer ${
-                    inactive ? 'text-zinc-500 hover:bg-good/15 hover:text-green-300' : 'text-amber-400 hover:bg-amber-500/15'
-                  }`}>
-                  <Power className="h-4 w-4" />
-                </button>
-                <button onClick={() => window.confirm('Diese Fixkosten löschen?') && deleteFixedCost(fc.id)} aria-label="Fixkosten löschen"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  <button onClick={() => window.confirm('Diese Fixkosten löschen?') && deleteFixedCost(fc.id)} aria-label="Fixkosten löschen"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )
           })}
