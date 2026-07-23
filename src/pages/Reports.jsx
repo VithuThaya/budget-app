@@ -352,9 +352,10 @@ function HighlightRow({ icon: Icon, tint, label, value, sub }) {
       <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${tint}22`, color: tint }}>
         <Icon className="h-5 w-5" />
       </span>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="stat-label">{label}</p>
-        <p className="truncate font-medium text-zinc-100">{value} {sub && <span className="text-xs text-zinc-500">• {sub}</span>}</p>
+        <p className="truncate font-medium text-zinc-100">{value}</p>
+        {sub && <p className="truncate text-xs text-zinc-500">{sub}</p>}
       </div>
     </div>
   )

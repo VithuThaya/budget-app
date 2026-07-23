@@ -15,7 +15,7 @@ export default function StatCard({ label, value, icon: Icon, accent = '#2563eb',
           </span>
         )}
       </div>
-      <div className="mt-2.5 truncate text-2xl font-semibold tracking-tight text-zinc-50">
+      <div className="mt-2.5 truncate text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
         <Money value={value} />
       </div>
       {(sub || trend) && (

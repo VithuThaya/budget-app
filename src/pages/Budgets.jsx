@@ -119,7 +119,7 @@ function BudgetRow({ category, budget, spent, onSave }) {
             <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-500">CHF</span>
             <input
               inputMode="decimal"
-              className="input w-32 pl-10"
+              className="input w-24 pl-10 sm:w-32"
               placeholder="0.00"
               value={value}
               onChange={(e) => setValue(e.target.value)}

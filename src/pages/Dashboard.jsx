@@ -157,10 +157,10 @@ export default function Dashboard() {
                 return (
                   <div key={cat.id}>
                     <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
-                      <span className="flex items-center gap-2 text-zinc-200">
-                        <Icon className="h-4 w-4" style={{ color: cat.color }} /> {cat.name}
+                      <span className="flex min-w-0 items-center gap-2 text-zinc-200">
+                        <Icon className="h-4 w-4 shrink-0" style={{ color: cat.color }} /> <span className="truncate">{cat.name}</span>
                       </span>
-                      <span className="tabular-nums text-zinc-400">
+                      <span className="shrink-0 whitespace-nowrap tabular-nums text-zinc-400">
                         <Money value={used} /> / <Money value={budget} />
                       </span>
                     </div>

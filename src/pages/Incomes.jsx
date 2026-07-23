@@ -59,11 +59,11 @@ export default function Incomes() {
       <div className="mb-5 grid grid-cols-2 gap-3">
         <div className="card p-4">
           <span className="stat-label">Diesen Monat</span>
-          <div className="mt-1.5 text-2xl font-semibold text-green-400"><Money value={thisMonth} /></div>
+          <div className="mt-1.5 truncate text-xl font-semibold text-green-400 sm:text-2xl"><Money value={thisMonth} /></div>
         </div>
         <div className="card p-4">
           <span className="stat-label">Gesamt</span>
-          <div className="mt-1.5 text-2xl font-semibold text-zinc-100"><Money value={total} /></div>
+          <div className="mt-1.5 truncate text-xl font-semibold text-zinc-100 sm:text-2xl"><Money value={total} /></div>
         </div>
       </div>
 
@@ -135,7 +135,7 @@ export default function Incomes() {
               </div>
               <div className="shrink-0 text-sm font-semibold tabular-nums text-green-400">+<Money value={inc.amount} /></div>
               <button onClick={() => window.confirm('Diese Einnahme löschen?') && deleteIncome(inc.id)} aria-label="Einnahme löschen"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 opacity-0 transition-opacity duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer group-hover:opacity-100 focus:opacity-100">
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 transition-colors duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
