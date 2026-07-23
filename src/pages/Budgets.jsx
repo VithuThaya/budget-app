@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
-import { Target, Check, Loader2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Target, Check, Loader2, Wallet } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
-import { spendByCategory, availableToSpend } from '../logic/selectors'
+import { spendByCategory, expectedMonthlyIncome, monthlyFixedTotal } from '../logic/selectors'
 import { parseAmount } from '../lib/money'
 import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
@@ -14,8 +15,11 @@ export default function Budgets() {
   const { categories, budgets, expenses, incomes, fixedCosts, setBudget } = useData()
   const spent = useMemo(() => spendByCategory(expenses, { monthOnly: true }), [expenses])
 
-  // Zero-based anchor: Einkommen − Fixkosten = the pot you distribute across budgets.
-  const available = useMemo(() => availableToSpend(incomes, fixedCosts), [incomes, fixedCosts])
+  // Zero-based anchor: expected monthly income − fixed costs = the pot to
+  // distribute. Expected income is stable (recurring salary) so it works before
+  // payday; only 0 when no income at all is recorded (→ guard below).
+  const plannedIncome = useMemo(() => expectedMonthlyIncome(incomes), [incomes])
+  const available = useMemo(() => plannedIncome - monthlyFixedTotal(fixedCosts), [plannedIncome, fixedCosts])
 
   const budgetByCat = useMemo(
     () => new Map(budgets.map((b) => [b.category_id, Number(b.amount)])),
@@ -51,28 +55,44 @@ export default function Budgets() {
     <div>
       <PageHeader title="Budgets" subtitle={`Monatslimits • ${formatMonthLabel()}`} />
 
-      {/* Zero-based: distribute available money across budgets */}
-      <div className="card mb-5 p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <span className="stat-label">Verfügbar zum Verteilen</span>
-            <p className="text-xs text-zinc-500">Einkommen − Fixkosten</p>
-            <div className="mt-1 text-2xl font-semibold text-zinc-50">
-              <Money value={available} />
-            </div>
-          </div>
-          <span className={`chip ${allocRatio > 1 ? 'bg-bad/10 text-red-300' : allocRatio >= 0.999 ? 'bg-good/10 text-green-300' : 'bg-white/5 text-zinc-300'}`}>
-            {Math.round(allocRatio * 100)}% verplant
+      {/* Zero-based: distribute expected income across budgets */}
+      {plannedIncome <= 0 ? (
+        <div className="card mb-5 flex flex-col items-start gap-3 p-5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <Wallet className="h-5 w-5" />
           </span>
+          <div>
+            <p className="font-medium text-zinc-100">Erfasse zuerst dein Einkommen</p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Sobald dein Lohn hinterlegt ist, rechnen wir dein verteilbares Geld aus:
+              Einkommen − Fixkosten.
+            </p>
+          </div>
+          <Link to="/incomes" className="btn-primary px-4 py-2 text-sm">Einnahmen erfassen</Link>
         </div>
-        <div className="mt-3"><ProgressBar ratio={allocRatio} /></div>
-        <div className="mt-3 flex items-center justify-between text-sm">
-          <span className="text-zinc-400">Verteilt: <Money value={totals.budgeted} /></span>
-          {toAllocate >= 0
-            ? <span className="text-zinc-300"><Money value={toAllocate} /> übrig</span>
-            : <span className="text-red-300"><Money value={-toAllocate} /> zu viel verteilt</span>}
+      ) : (
+        <div className="card mb-5 p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <span className="stat-label">Verfügbar zum Verteilen</span>
+              <p className="text-xs text-zinc-500">Erwartetes Einkommen − Fixkosten</p>
+              <div className={`mt-1 text-2xl font-semibold ${available < 0 ? 'text-red-300' : 'text-zinc-50'}`}>
+                <Money value={available} />
+              </div>
+            </div>
+            <span className={`chip ${allocRatio > 1 ? 'bg-bad/10 text-red-300' : allocRatio >= 0.999 ? 'bg-good/10 text-green-300' : 'bg-white/5 text-zinc-300'}`}>
+              {Math.round(allocRatio * 100)}% verplant
+            </span>
+          </div>
+          <div className="mt-3"><ProgressBar ratio={allocRatio} /></div>
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <span className="text-zinc-400">Verteilt: <Money value={totals.budgeted} /></span>
+            {toAllocate >= 0
+              ? <span className="text-zinc-300"><Money value={toAllocate} /> übrig</span>
+              : <span className="text-red-300"><Money value={-toAllocate} /> zu viel verteilt</span>}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Overall summary */}
       <div className="card mb-5 p-5">

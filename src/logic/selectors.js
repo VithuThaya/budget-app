@@ -94,6 +94,20 @@ export function availableToSpend(incomes, fixedCosts) {
   return monthIncome(incomes) - monthlyFixedTotal(fixedCosts)
 }
 
+/**
+ * Expected income per month for planning: recurring income templates
+ * (recurring=true) normalised to a monthly amount. This is a stable anchor that
+ * works before payday, unlike monthIncome which only counts income already posted
+ * this month. Falls back to the actual month income when no recurring template
+ * exists, so a manually-entered salary still anchors the plan.
+ */
+export function expectedMonthlyIncome(incomes) {
+  const recurring = (incomes || [])
+    .filter((i) => i.recurring)
+    .reduce((a, i) => a + Number(i.amount) * (i.recur_interval === 'weekly' ? 52 / 12 : 1), 0)
+  return recurring > 0 ? recurring : monthIncome(incomes)
+}
+
 // How many months apart each period recurs (used to decide when a non-monthly
 // cost is due again from its last paid month).
 const PERIOD_STEP_MONTHS = { monthly: 1, quarterly: 3, yearly: 12 }
