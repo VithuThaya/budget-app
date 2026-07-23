@@ -93,3 +93,16 @@ export function monthlyFixedTotal(fixedCosts) {
 export function availableToSpend(incomes, fixedCosts) {
   return monthIncome(incomes) - monthlyFixedTotal(fixedCosts)
 }
+
+/**
+ * Running account balance, bank-style: every income minus every expense,
+ * all-time. The user carries prior-month leftovers forward as an income, so
+ * this mirrors their real bank balance and naturally rolls into next month.
+ * Fixed costs (a planning layer) and savings pots (earmarks, money still on
+ * the account) are intentionally NOT subtracted here.
+ */
+export function accountBalance(incomes, expenses) {
+  const income = (incomes || []).reduce((a, i) => a + Number(i.amount), 0)
+  const spent = (expenses || []).reduce((a, e) => a + Number(e.amount), 0)
+  return income - spent
+}

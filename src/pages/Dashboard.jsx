@@ -7,7 +7,7 @@ import {
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import {
-  monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal,
+  monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal, accountBalance,
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
@@ -33,6 +33,7 @@ export default function Dashboard() {
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
   const available = incomeMonth - fixedMonth
   const leftToSpend = available - spentMonth - savedMonth
+  const balance = useMemo(() => accountBalance(incomes, expenses), [incomes, expenses])
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
   const weekTrend = useMemo(() => {
@@ -75,6 +76,24 @@ export default function Dashboard() {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-[1.65rem]">Übersicht</h1>
         <p className="mt-1 text-sm text-zinc-400">{formatMonthLabel()} im Überblick</p>
       </div>
+
+      {/* Account balance (bank-style: all income − all expenses, carries forward) */}
+      <section className="card mb-5 overflow-hidden bg-gradient-to-br from-ink-900 to-ink-850 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="stat-label flex items-center gap-1.5">
+            <Wallet className="h-4 w-4" /> Kontostand
+          </span>
+          <span className={`chip ${balance >= 0 ? 'bg-good/10 text-green-300' : 'bg-bad/10 text-red-300'}`}>
+            {balance >= 0 ? 'im Plus' : 'im Minus'}
+          </span>
+        </div>
+        <div className={`mt-1.5 truncate text-3xl font-bold tracking-tight sm:text-4xl ${balance >= 0 ? 'text-green-400' : 'text-red-300'}`}>
+          <Money value={balance} />
+        </div>
+        <p className="mt-1.5 text-xs text-zinc-500">
+          Alle Einnahmen − alle Ausgaben, fortlaufend — wie dein Bankkonto. Wird in den nächsten Monat übertragen.
+        </p>
+      </section>
 
       {/* Stat row */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
