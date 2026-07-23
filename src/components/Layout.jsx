@@ -18,8 +18,8 @@ const NAV = [
 ]
 
 // Mobile bottom dock: 4 primary tabs, rest live in the fluid center menu.
-const DOCK_TABS = [NAV[0], NAV[1], NAV[4], NAV[7]] // Übersicht, Ausgaben, Sparen, Berichte
-const FLUID_NAV = [NAV[2], NAV[3], NAV[5], NAV[6]] // Einnahmen, Fixkosten, Budgets, Kategorien
+const DOCK_TABS = [NAV[0], NAV[1], NAV[5], NAV[7]] // Übersicht, Ausgaben, Budgets, Berichte
+const FLUID_NAV = [NAV[2], NAV[3], NAV[4], NAV[6]] // Einnahmen, Fixkosten, Sparen, Kategorien
 
 function NavItems({ onNavigate }) {
   return (
