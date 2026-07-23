@@ -23,6 +23,7 @@ export default function FixedCosts() {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [period, setPeriod] = useState('monthly')
+  const [dueDay, setDueDay] = useState('1')
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -42,10 +43,11 @@ export default function FixedCosts() {
         name: name.trim(),
         amount: value,
         period,
+        due_day: Math.min(Math.max(parseInt(dueDay, 10) || 1, 1), 28),
         active: true,
         notes: notes.trim() || null,
       })
-      setName(''); setAmount(''); setPeriod('monthly'); setNotes(''); setOpen(false)
+      setName(''); setAmount(''); setPeriod('monthly'); setDueDay('1'); setNotes(''); setOpen(false)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -96,6 +98,14 @@ export default function FixedCosts() {
                 ))}
               </div>
             </div>
+            {period !== 'weekly' && (
+              <div className="sm:col-span-2">
+                <label htmlFor="fc-dueday" className="label">Abbuchungstag im Monat (1–28)</label>
+                <input id="fc-dueday" inputMode="numeric" className="input" placeholder="1" value={dueDay}
+                  onChange={(e) => setDueDay(e.target.value.replace(/\D/g, ''))} />
+                <p className="mt-1 text-xs text-zinc-500">An welchem Tag wird die Kosten abgebucht? Steuert den Kontostand & die Monatsend-Prognose.</p>
+              </div>
+            )}
             <div className="sm:col-span-2">
               <label htmlFor="fc-notes" className="label">Notiz (optional)</label>
               <input id="fc-notes" className="input" placeholder="Anbieter, Vertragsende…" value={notes}
@@ -140,6 +150,7 @@ export default function FixedCosts() {
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-xs text-zinc-500">
                     <span className="chip bg-accent/10 text-accent-soft">{labelFor(fc.period)}</span>
+                    {fc.period !== 'weekly' && <span className="shrink-0 tabular-nums">am {fc.due_day || 1}.</span>}
                     {inactive && <span className="chip bg-ink-800 text-zinc-400">pausiert</span>}
                     {showMonthly && (
                       <span className="shrink-0 tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/Mt.</span>

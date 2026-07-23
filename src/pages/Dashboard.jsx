@@ -12,7 +12,7 @@ import {
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
-import { weeklyTotals, formatMonthLabel } from '../lib/dates'
+import { weeklyTotals, formatMonthLabel, endOfMonthISO } from '../lib/dates'
 import StatCard from '../components/StatCard'
 import AlertBanner from '../components/AlertBanner'
 import ProgressBar from '../components/ProgressBar'
@@ -38,6 +38,13 @@ export default function Dashboard() {
   const balance = useMemo(() => accountBalance(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
   const totalIncome = useMemo(() => incomes.reduce((a, i) => a + Number(i.amount), 0), [incomes])
   const totalSpent = useMemo(() => expenses.reduce((a, e) => a + Number(e.amount), 0), [expenses])
+  // Projected end-of-month balance if no further income is entered: same balance
+  // formula, but counting every fixed cost still due before month-end.
+  const projectedMonthEnd = useMemo(
+    () => accountBalance(incomes, expenses, fixedCosts, endOfMonthISO()),
+    [incomes, expenses, fixedCosts],
+  )
+  const fixedComing = Math.max(0, balance - projectedMonthEnd) // fixed costs still due this month
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
   const weekTrend = useMemo(() => {
@@ -104,6 +111,17 @@ export default function Dashboard() {
         <p className="mt-2 text-xs text-zinc-500">
           Einnahmen − Ausgaben − bereits fällige Fixkosten, fortlaufend — wie dein echtes Bankkonto. Wird in den nächsten Monat übertragen.
         </p>
+        {fixedComing > 0 && (
+          <div className="mt-3 flex items-center justify-between border-t border-ink-800 pt-3">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-zinc-300">Prognose Ende {formatMonthLabel()}</p>
+              <p className="text-[11px] text-zinc-500">
+                ohne weitere Einnahmen · noch <Money value={fixedComing} /> Fixkosten fällig
+              </p>
+            </div>
+            <Money value={projectedMonthEnd} className={`shrink-0 text-lg font-bold tabular-nums ${projectedMonthEnd >= 0 ? 'text-green-400' : 'text-red-300'}`} />
+          </div>
+        )}
       </section>
 
       {/* Stat row */}

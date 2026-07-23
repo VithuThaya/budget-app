@@ -39,6 +39,11 @@ export function startOfMonth(d = new Date()) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
+/** ISO date of the last day of `d`'s month. */
+export function endOfMonthISO(d = new Date()) {
+  return toISODate(new Date(d.getFullYear(), d.getMonth() + 1, 0))
+}
+
 /** Add n days to a date, returning a new Date. */
 export function addDays(d, n) {
   const date = parseISO(toISODate(d))

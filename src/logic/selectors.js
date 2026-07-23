@@ -99,12 +99,12 @@ const PERIOD_STEP_MONTHS = { monthly: 1, quarterly: 3, yearly: 12 }
 
 /**
  * How many times a single fixed cost has actually been billed on/before `refISO`.
- * Billing model: a cost bills on the 1st, starting the 1st of the month AFTER it
- * was created (you add it while setting up for the coming month), then every
- * period thereafter — monthly every month, quarterly every 3, yearly every 12,
- * weekly every 7 days. This mirrors real Swiss billing (~start of month).
- * ponytail: billing assumed on the 1st; if a cost bills mid-month the balance
- * leads the real debit by a few weeks — add a per-cost billing day if that matters.
+ * Billing model: a cost bills on its `due_day` (day of month, default 1), the
+ * first time on the first due_day on/after it was created, then every period
+ * thereafter — monthly every month, quarterly every 3, yearly every 12, weekly
+ * every 7 days. This mirrors the real bank debit dates the user enters.
+ * ponytail: due_day clamped to 1..28 so it's valid in every month; a cost that
+ * bills on the 29th–31st is treated as the 28th.
  */
 export function fixedChargeCount(fc, refISO = todayISO()) {
   if (fc.active === false) return 0
@@ -116,10 +116,17 @@ export function fixedChargeCount(fc, refISO = todayISO()) {
     return Math.floor((ref - first) / (7 * 86400000)) + 1
   }
   const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
-  const first = new Date(created.getFullYear(), created.getMonth() + 1, 1) // 1st of next month
+  const day = Math.min(Math.max(Number(fc.due_day) || 1, 1), 28)
+  // First billing = the first `day`-of-month on/after the created date.
+  let fm = created.getMonth()
+  if (created.getDate() > day) fm += 1
+  const first = new Date(created.getFullYear(), fm, day)
   if (ref < first) return 0
   const months = (ref.getFullYear() - first.getFullYear()) * 12 + (ref.getMonth() - first.getMonth())
-  return Math.floor(months / step) + 1
+  let n = Math.floor(months / step) // 0-based index of the latest occurrence in/before ref's month
+  const occ = new Date(first.getFullYear(), first.getMonth() + n * step, day)
+  if (occ > ref) n -= 1 // that occurrence's day hasn't arrived yet
+  return n + 1
 }
 
 /** Total fixed-cost money actually billed to the account on/before `refISO`. */
