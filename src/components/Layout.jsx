@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, ReceiptText, Plus, TrendingUp, Tags, Target,
-  BarChart3, Wallet, LogOut, Menu, X, CalendarClock, PiggyBank,
+  BarChart3, Wallet, LogOut, X, CalendarClock, PiggyBank,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
@@ -16,6 +16,10 @@ const NAV = [
   { to: '/categories', label: 'Kategorien', icon: Tags },
   { to: '/reports', label: 'Berichte', icon: BarChart3 },
 ]
+
+// Mobile bottom dock: 4 primary tabs, rest live in the fluid center menu.
+const DOCK_TABS = [NAV[0], NAV[1], NAV[4], NAV[7]] // Übersicht, Ausgaben, Sparen, Berichte
+const FLUID_NAV = [NAV[2], NAV[3], NAV[5], NAV[6]] // Einnahmen, Fixkosten, Budgets, Kategorien
 
 function NavItems({ onNavigate }) {
   return (
@@ -43,7 +47,6 @@ function NavItems({ onNavigate }) {
 }
 
 export default function Layout({ session }) {
-  const [open, setOpen] = useState(false)
   const navigate = useNavigate()
   const email = session?.user?.email
 
@@ -62,41 +65,6 @@ export default function Layout({ session }) {
         <UserFooter email={email} onSignOut={signOut} />
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-ink-800 bg-ink-900/80 px-4 py-3 backdrop-blur lg:hidden">
-        <Brand compact />
-        <button
-          aria-label="Menü öffnen"
-          onClick={() => setOpen(true)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-zinc-200 cursor-pointer"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-      </header>
-
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 left-0 flex w-72 flex-col border-r border-ink-800 bg-ink-900 p-4">
-            <div className="flex items-center justify-between">
-              <Brand />
-              <button
-                aria-label="Menü schließen"
-                onClick={() => setOpen(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-ink-700 bg-ink-800 text-zinc-200 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="mt-6 flex-1">
-              <NavItems onNavigate={() => setOpen(false)} />
-            </div>
-            <UserFooter email={email} onSignOut={signOut} />
-          </div>
-        </div>
-      )}
-
       {/* Main content */}
       <main className="min-w-0 px-4 pb-28 pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">
         <div className="mx-auto w-full max-w-6xl">
@@ -104,15 +72,132 @@ export default function Layout({ session }) {
         </div>
       </main>
 
-      {/* Floating add button (always reachable) */}
-      <button
-        onClick={() => navigate('/expenses/add')}
-        className="fixed bottom-6 right-5 z-40 flex h-14 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-white shadow-glow transition-colors duration-200 hover:bg-accent-soft cursor-pointer sm:right-8"
-      >
-        <Plus className="h-5 w-5" />
-        <span className="hidden sm:inline">Ausgabe</span>
-      </button>
+      {/* Mobile dock */}
+      <MobileDock onNavigate={navigate} onSignOut={signOut} />
     </div>
+  )
+}
+
+function MobileDock({ onNavigate, onSignOut }) {
+  const [open, setOpen] = useState(false)
+  const close = () => setOpen(false)
+
+  // Actions + overflow pages revealed by the fluid center button (bottom → top).
+  const fluidItems = [
+    { key: 'add', label: 'Neue Ausgabe', icon: Plus, accent: true, action: () => onNavigate('/expenses/add') },
+    ...FLUID_NAV.map((n) => ({ key: n.to, label: n.label, icon: n.icon, to: n.to })),
+    { key: 'signout', label: 'Abmelden', icon: LogOut, danger: true, action: onSignOut },
+  ]
+
+  return (
+    <div className="lg:hidden">
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          onClick={close}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Fluid menu — expands upward from the center button */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex flex-col-reverse items-center gap-2.5 px-4">
+        {fluidItems.map((item, i) => {
+          const Icon = item.icon
+          const base =
+            'pointer-events-auto flex items-center gap-3 rounded-full border py-2.5 pl-2.5 pr-4 shadow-card backdrop-blur-xl transition-all duration-300 will-change-transform'
+          const tone = item.accent
+            ? 'border-accent/40 bg-accent text-white'
+            : item.danger
+              ? 'border-ink-700 bg-ink-800/90 text-zinc-300'
+              : 'border-ink-700 bg-ink-800/90 text-zinc-100'
+          const anim = open
+            ? 'translate-y-0 opacity-100 scale-100'
+            : 'translate-y-4 opacity-0 scale-95'
+          const iconWrap = item.accent
+            ? 'bg-white/20 text-white'
+            : item.danger
+              ? 'bg-ink-700 text-bad'
+              : 'bg-ink-700 text-accent'
+          const content = (
+            <>
+              <span className={`flex h-8 w-8 items-center justify-center rounded-full ${iconWrap}`}>
+                <Icon className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-medium">{item.label}</span>
+            </>
+          )
+          const cls = `${base} ${tone} ${anim}`
+          const style = { transitionDelay: `${open ? i * 40 : 0}ms` }
+          return item.to ? (
+            <NavLink key={item.key} to={item.to} onClick={close} className={cls} style={style}>
+              {content}
+            </NavLink>
+          ) : (
+            <button
+              key={item.key}
+              onClick={() => { item.action(); close() }}
+              className={cls}
+              style={style}
+              tabIndex={open ? 0 : -1}
+            >
+              {content}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Dock bar */}
+      <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+        <div className="flex items-end gap-1 rounded-[1.7rem] border border-ink-700/80 bg-ink-900/85 px-2 py-1.5 shadow-card backdrop-blur-xl">
+          <DockTab tab={DOCK_TABS[0]} />
+          <DockTab tab={DOCK_TABS[1]} />
+
+          {/* Fluid center button */}
+          <button
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
+            aria-expanded={open}
+            className="relative -mt-7 mx-0.5 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-accent text-white shadow-glow ring-4 ring-ink-900 transition-transform duration-200 active:scale-95"
+          >
+            <Plus
+              className={`absolute h-7 w-7 transition-all duration-300 ${open ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}
+            />
+            <X
+              className={`absolute h-7 w-7 transition-all duration-300 ${open ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'}`}
+            />
+          </button>
+
+          <DockTab tab={DOCK_TABS[2]} />
+          <DockTab tab={DOCK_TABS[3]} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DockTab({ tab }) {
+  const { to, label, icon: Icon, end } = tab
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `relative flex w-[68px] flex-col items-center gap-1 rounded-2xl px-1 py-1.5 transition-colors duration-200 ${
+          isActive ? 'text-accent' : 'text-zinc-400'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <span className="absolute top-0 h-1 w-7 rounded-full bg-accent" />
+          )}
+          <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 2} />
+          <span className="text-[10px] font-medium leading-none">{label}</span>
+        </>
+      )}
+    </NavLink>
   )
 }
 
