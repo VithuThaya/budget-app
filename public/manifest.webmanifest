@@ -1,0 +1,16 @@
+{
+  "name": "Budget",
+  "short_name": "Budget",
+  "description": "Persönliches Budget: Ausgaben, Fixkosten, Sparziele und smarte Auswertungen.",
+  "start_url": "/budget-app/",
+  "scope": "/budget-app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    { "src": "/budget-app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/budget-app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/budget-app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
