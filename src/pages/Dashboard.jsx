@@ -8,7 +8,7 @@ import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import {
   monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal, accountBalance,
-  fixedPaidTotal, fixedOpenThisMonth, projectedMonthEndBalance, leftToSpendThisMonth,
+  fixedPaidTotal, monthCarryover, fixedDueThisMonth, leftToSpendThisMonth,
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
@@ -31,20 +31,14 @@ export default function Dashboard() {
   const spentWeek = useMemo(() => weekSpend(expenses), [expenses])
   const incomeMonth = useMemo(() => monthIncome(incomes), [incomes])
   const fixedMonth = useMemo(() => monthlyFixedTotal(fixedCosts), [fixedCosts])
+  const fixedDueMonth = useMemo(() => fixedDueThisMonth(fixedCosts), [fixedCosts])
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
-  const available = incomeMonth - fixedMonth
+  const carryover = useMemo(() => monthCarryover(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
   const leftToSpend = leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth })
   const fixedBilled = useMemo(() => fixedPaidTotal(fixedCosts), [fixedCosts])
   const balance = useMemo(() => accountBalance(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
   const totalIncome = useMemo(() => incomes.reduce((a, i) => a + Number(i.amount), 0), [incomes])
   const totalSpent = useMemo(() => expenses.reduce((a, e) => a + Number(e.amount), 0), [expenses])
-  // Projected month-end balance if no more income is entered: current balance
-  // minus the fixed costs still open (not yet ticked as paid) this month.
-  const fixedComing = useMemo(() => fixedOpenThisMonth(fixedCosts), [fixedCosts])
-  const projectedMonthEnd = useMemo(
-    () => projectedMonthEndBalance(incomes, expenses, fixedCosts),
-    [incomes, expenses, fixedCosts],
-  )
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
   const weekTrend = useMemo(() => {
@@ -111,17 +105,6 @@ export default function Dashboard() {
         <p className="mt-2 text-xs text-zinc-500">
           Einnahmen − Ausgaben − bereits fällige Fixkosten, fortlaufend — wie dein echtes Bankkonto. Wird in den nächsten Monat übertragen.
         </p>
-        {fixedComing > 0 && (
-          <div className="mt-3 flex items-center justify-between border-t border-ink-800 pt-3">
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-zinc-300">Prognose Ende {formatMonthLabel()}</p>
-              <p className="text-[11px] text-zinc-500">
-                ohne weitere Einnahmen · noch <Money value={fixedComing} /> Fixkosten offen
-              </p>
-            </div>
-            <Money value={projectedMonthEnd} className={`shrink-0 text-lg font-bold tabular-nums ${projectedMonthEnd >= 0 ? 'text-green-400' : 'text-red-300'}`} />
-          </div>
-        )}
       </section>
 
       {/* Stat row */}
@@ -132,33 +115,28 @@ export default function Dashboard() {
         <StatCard label={leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget'} value={leftToSpend} icon={Wallet} accent="#2563eb" />
       </div>
 
-      {/* Available-to-spend breakdown */}
+      {/* End-of-month "left to spend": carry-over + this month's flows */}
       <section className="card mt-5 p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-            <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Verfügbar zum Ausgeben
+            <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Übrig zum Ausgeben
           </h2>
-          <span className="text-xs text-zinc-500">{formatMonthLabel()}</span>
+          <span className="text-xs text-zinc-500">Ende {formatMonthLabel()}</span>
         </div>
         <div className="space-y-2.5 text-sm">
+          <BreakdownRow label="Übertrag Vormonat" value={carryover} tone={carryover >= 0 ? 'pos' : 'neg'} />
           <BreakdownRow label="Einnahmen diesen Monat" value={incomeMonth} tone="pos" />
-          <BreakdownRow label="Fixkosten" value={-fixedMonth} tone="neg" linkTo="/fixed-costs" />
-          <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-medium text-zinc-100">
-            <span>Verfügbar</span>
-            <Money value={available} className="text-base font-semibold" />
-          </div>
-          <BreakdownRow label="Ausgegeben diesen Monat" value={-spentMonth} tone="neg" />
+          <BreakdownRow label="Fixkosten diesen Monat" value={-fixedDueMonth} tone="neg" linkTo="/fixed-costs" />
+          <BreakdownRow label="Ausgaben diesen Monat" value={-spentMonth} tone="neg" />
           {savedMonth > 0 && <BreakdownRow label="Diesen Monat gespart" value={-savedMonth} tone="neg" linkTo="/savings" />}
           <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
             <span className="text-zinc-100">Übrig zum Ausgeben</span>
             <Money value={leftToSpend} className={`text-lg font-bold ${leftToSpend >= 0 ? 'text-green-400' : 'text-red-300'}`} />
           </div>
         </div>
-        {incomeMonth === 0 && (
-          <p className="mt-3 text-xs text-zinc-500">
-            Noch keine Einnahmen diesen Monat — trage sie unter „Einnahmen" ein, für ein genaues Bild.
-          </p>
-        )}
+        <p className="mt-3 text-xs text-zinc-500">
+          Was rechnerisch bis Monatsende übrig bleibt, wenn keine weiteren Einnahmen dazukommen — inkl. Übertrag aus dem Vormonat.
+        </p>
       </section>
 
       {/* Advisor + weekly */}

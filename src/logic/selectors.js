@@ -156,13 +156,41 @@ export function projectedMonthEndBalance(incomes, expenses, fixedCosts = [], ref
   return accountBalance(incomes, expenses, fixedCosts) - fixedOpenThisMonth(fixedCosts, refISO)
 }
 
+/** Money carried into the current month = balance at the end of the previous
+ *  month: all income/expenses dated before this month, minus fixed costs paid
+ *  in earlier months. This carries the (end-of-prev-month) salary forward. */
+export function monthCarryover(incomes, expenses, fixedCosts, ref = todayISO()) {
+  const cur = monthKey(ref)
+  const before = (arr) => (arr || []).filter((x) => monthKey(x.date) < cur).reduce((a, x) => a + Number(x.amount), 0)
+  const fixedPaidBefore = (fixedCosts || [])
+    .reduce((s, fc) => s + Number(fc.amount) * (fc.paid_months || []).filter((m) => m < cur).length, 0)
+  return before(incomes) - before(expenses) - fixedPaidBefore
+}
+
+/** Sum of the fixed costs that belong to the current month (already paid this
+ *  month + still open this month) — the full month's obligation, actual amounts
+ *  (quarterly/yearly only counted in their due month), not normalised. */
+export function fixedDueThisMonth(fixedCosts, ref = todayISO()) {
+  const cur = monthKey(ref)
+  return (fixedCosts || [])
+    .filter((fc) => fc.active !== false && ((fc.paid_months || []).includes(cur) || isFixedOpenThisMonth(fc, ref)))
+    .reduce((s, fc) => s + Number(fc.amount), 0)
+}
+
 /**
- * Money still free this month = the disposable-income chain end point:
- * income − fixed costs − spent − already saved. This is BOTH the Dashboard's
- * "Übrig zum Ausgeben" and the Savings page's "Verfügbar zum Sparen" — one
- * definition so the two pages never drift. `savedThisMonth` is passed in
- * (from savings.js `monthSavings`) to avoid a circular import.
+ * Money still free this month, end-of-month view:
+ *   carry-over from last month + this month's income − this month's fixed costs
+ *   − this month's spend − already saved.
+ * The carry-over folds in the previous month's leftovers (incl. an end-of-month
+ * salary), so this stays correct even when income lands late. This is BOTH the
+ * Dashboard's "Übrig zum Ausgeben" and the Savings page's "Verfügbar zum Sparen"
+ * — one definition so the two pages never drift. `savedThisMonth` comes from
+ * savings.js `monthSavings` (passed in to avoid a circular import).
  */
 export function leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth = 0 }) {
-  return monthIncome(incomes) - monthlyFixedTotal(fixedCosts) - monthSpend(expenses) - savedThisMonth
+  return monthCarryover(incomes, expenses, fixedCosts)
+    + monthIncome(incomes)
+    - fixedDueThisMonth(fixedCosts)
+    - monthSpend(expenses)
+    - savedThisMonth
 }
