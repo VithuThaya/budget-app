@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { Loader2, Save, ArrowLeft } from 'lucide-react'
+import { Loader2, Save, ArrowLeft, Search, Sparkles } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import { parseAmount } from '../lib/money'
 import { todayISO } from '../lib/dates'
+import { buildCategoryIndex, suggestCategory } from '../logic/categorySuggest'
 import PageHeader from '../components/PageHeader'
 
 export default function AddExpense() {
@@ -19,6 +20,25 @@ export default function AddExpense() {
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
+
+  // How often each category has been used — most-used float to the top.
+  const freq = useMemo(() => {
+    const m = new Map()
+    for (const e of expenses) m.set(e.category_id, (m.get(e.category_id) || 0) + 1)
+    return m
+  }, [expenses])
+
+  // Auto-suggest a category from the typed description, learned from history.
+  const catIndex = useMemo(() => buildCategoryIndex(expenses), [expenses])
+  const suggestedId = useMemo(() => suggestCategory(notes, catIndex), [notes, catIndex])
+
+  const sortedCats = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return [...categories]
+      .filter((c) => !q || c.name.toLowerCase().includes(q))
+      .sort((a, b) => (freq.get(b.id) || 0) - (freq.get(a.id) || 0))
+  }, [categories, freq, search])
 
   // Preload values when editing.
   useEffect(() => {
@@ -88,11 +108,43 @@ export default function AddExpense() {
           </div>
         </div>
 
-        {/* Category */}
+        {/* Description — first, so the category can be auto-suggested from it */}
+        <div>
+          <label htmlFor="notes" className="label">Beschreibung / Notiz</label>
+          <input id="notes" className="input"
+            placeholder="z. B. Coop Redbull, SV Kaffi, Migros…"
+            value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
+
+        {/* Category — searchable, most-used first, with a suggestion from history */}
         <div>
           <span className="label">Kategorie</span>
+          {categories.length > 6 && (
+            <div className="relative mb-2">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Kategorie suchen…" className="input pl-10" />
+            </div>
+          )}
+
+          {suggestedId && suggestedId !== categoryId && (() => {
+            const s = categories.find((c) => c.id === suggestedId)
+            if (!s) return null
+            const SIcon = iconFor(s.icon)
+            return (
+              <button type="button" onClick={() => setCategoryId(suggestedId)}
+                className="mb-2 flex w-full items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-zinc-200 transition-colors duration-200 hover:bg-accent/15 cursor-pointer">
+                <Sparkles className="h-4 w-4 shrink-0 text-accent-soft" />
+                <span className="shrink-0 text-zinc-400">Vorschlag:</span>
+                <SIcon className="h-4 w-4 shrink-0" style={{ color: s.color }} />
+                <span className="truncate font-medium">{s.name}</span>
+                <span className="ml-auto shrink-0 text-xs font-medium text-accent-soft">übernehmen</span>
+              </button>
+            )
+          })()}
+
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {categories.map((cat) => {
+            {sortedCats.map((cat) => {
               const Icon = iconFor(cat.icon)
               const active = categoryId === cat.id
               return (
@@ -116,6 +168,9 @@ export default function AddExpense() {
               Noch keine Kategorien. <Link to="/categories" className="text-accent-soft underline">Erstelle eine</Link>.
             </p>
           )}
+          {sortedCats.length === 0 && categories.length > 0 && (
+            <p className="mt-2 text-sm text-zinc-500">Keine Kategorie gefunden für „{search}".</p>
+          )}
         </div>
 
         {/* Date */}
@@ -123,14 +178,6 @@ export default function AddExpense() {
           <label htmlFor="date" className="label">Datum</label>
           <input id="date" type="date" className="input" value={date} max={todayISO()}
             onChange={(e) => setDate(e.target.value)} />
-        </div>
-
-        {/* Notes */}
-        <div>
-          <label htmlFor="notes" className="label">Notiz (optional)</label>
-          <textarea id="notes" rows={3} className="input resize-none"
-            placeholder="z. B. Mittagessen, Kaffee mit dem Team…"
-            value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
 
         {error && <p className="rounded-lg border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-red-300">{error}</p>}
