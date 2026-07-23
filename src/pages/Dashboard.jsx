@@ -8,7 +8,7 @@ import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import {
   monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal, accountBalance,
-  leftToSpendThisMonth,
+  fixedChargesToDate, leftToSpendThisMonth,
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
@@ -34,7 +34,10 @@ export default function Dashboard() {
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
   const available = incomeMonth - fixedMonth
   const leftToSpend = leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth })
-  const balance = useMemo(() => accountBalance(incomes, expenses), [incomes, expenses])
+  const fixedBilled = useMemo(() => fixedChargesToDate(fixedCosts), [fixedCosts])
+  const balance = useMemo(() => accountBalance(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
+  const totalIncome = useMemo(() => incomes.reduce((a, i) => a + Number(i.amount), 0), [incomes])
+  const totalSpent = useMemo(() => expenses.reduce((a, e) => a + Number(e.amount), 0), [expenses])
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
   const weekTrend = useMemo(() => {
@@ -91,8 +94,15 @@ export default function Dashboard() {
         <div className={`mt-1.5 truncate text-3xl font-bold tracking-tight sm:text-4xl ${balance >= 0 ? 'text-green-400' : 'text-red-300'}`}>
           <Money value={balance} />
         </div>
-        <p className="mt-1.5 text-xs text-zinc-500">
-          Alle Einnahmen − alle Ausgaben, fortlaufend — wie dein Bankkonto. Wird in den nächsten Monat übertragen.
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+          <span className="whitespace-nowrap">Einnahmen <Money value={totalIncome} className="tabular-nums text-green-400" /></span>
+          <span className="whitespace-nowrap">− Ausgaben <Money value={totalSpent} className="tabular-nums text-zinc-300" /></span>
+          <Link to="/fixed-costs" className="whitespace-nowrap hover:text-accent-soft hover:underline cursor-pointer">
+            − Fixkosten <Money value={fixedBilled} className="tabular-nums text-zinc-300" />
+          </Link>
+        </div>
+        <p className="mt-2 text-xs text-zinc-500">
+          Einnahmen − Ausgaben − bereits fällige Fixkosten, fortlaufend — wie dein echtes Bankkonto. Wird in den nächsten Monat übertragen.
         </p>
       </section>
 

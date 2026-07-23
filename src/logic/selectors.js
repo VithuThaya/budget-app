@@ -1,7 +1,7 @@
 // Shared derivations used by pages and the intelligence modules.
 // Keeping these pure + centralised guarantees Dashboard, Budgets and Reports
 // all compute the same numbers from the same source arrays.
-import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO } from '../lib/dates'
+import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO, todayISO } from '../lib/dates'
 
 /** Total spent in the month of `ref` (default: current month). */
 export function monthSpend(expenses, ref) {
@@ -94,17 +94,50 @@ export function availableToSpend(incomes, fixedCosts) {
   return monthIncome(incomes) - monthlyFixedTotal(fixedCosts)
 }
 
+// How often each period bills within a month (used to step charge dates).
+const PERIOD_STEP_MONTHS = { monthly: 1, quarterly: 3, yearly: 12 }
+
 /**
- * Running account balance, bank-style: every income minus every expense,
- * all-time. The user carries prior-month leftovers forward as an income, so
- * this mirrors their real bank balance and naturally rolls into next month.
- * Fixed costs (a planning layer) and savings pots (earmarks, money still on
- * the account) are intentionally NOT subtracted here.
+ * How many times a single fixed cost has actually been billed on/before `refISO`.
+ * Billing model: a cost bills on the 1st, starting the 1st of the month AFTER it
+ * was created (you add it while setting up for the coming month), then every
+ * period thereafter — monthly every month, quarterly every 3, yearly every 12,
+ * weekly every 7 days. This mirrors real Swiss billing (~start of month).
+ * ponytail: billing assumed on the 1st; if a cost bills mid-month the balance
+ * leads the real debit by a few weeks — add a per-cost billing day if that matters.
  */
-export function accountBalance(incomes, expenses) {
+export function fixedChargeCount(fc, refISO = todayISO()) {
+  if (fc.active === false) return 0
+  const created = parseISO(String(fc.created_at ?? refISO).slice(0, 10))
+  const ref = parseISO(refISO)
+  if (fc.period === 'weekly') {
+    const first = addDays(created, 7)
+    if (ref < first) return 0
+    return Math.floor((ref - first) / (7 * 86400000)) + 1
+  }
+  const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
+  const first = new Date(created.getFullYear(), created.getMonth() + 1, 1) // 1st of next month
+  if (ref < first) return 0
+  const months = (ref.getFullYear() - first.getFullYear()) * 12 + (ref.getMonth() - first.getMonth())
+  return Math.floor(months / step) + 1
+}
+
+/** Total fixed-cost money actually billed to the account on/before `refISO`. */
+export function fixedChargesToDate(fixedCosts, refISO = todayISO()) {
+  return (fixedCosts || []).reduce((sum, fc) => sum + Number(fc.amount) * fixedChargeCount(fc, refISO), 0)
+}
+
+/**
+ * Running account balance, bank-style: every income minus every expense minus
+ * every fixed cost that has actually been billed to date (see fixedChargesToDate).
+ * The user carries prior-month leftovers forward as an income, so this mirrors
+ * their real bank balance and naturally rolls into next month. Savings pots
+ * (earmarks, money still on the account) are intentionally NOT subtracted here.
+ */
+export function accountBalance(incomes, expenses, fixedCosts = [], refISO = todayISO()) {
   const income = (incomes || []).reduce((a, i) => a + Number(i.amount), 0)
   const spent = (expenses || []).reduce((a, e) => a + Number(e.amount), 0)
-  return income - spent
+  return income - spent - fixedChargesToDate(fixedCosts, refISO)
 }
 
 /**
