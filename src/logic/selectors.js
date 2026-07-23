@@ -106,3 +106,14 @@ export function accountBalance(incomes, expenses) {
   const spent = (expenses || []).reduce((a, e) => a + Number(e.amount), 0)
   return income - spent
 }
+
+/**
+ * Money still free this month = the disposable-income chain end point:
+ * income − fixed costs − spent − already saved. This is BOTH the Dashboard's
+ * "Übrig zum Ausgeben" and the Savings page's "Verfügbar zum Sparen" — one
+ * definition so the two pages never drift. `savedThisMonth` is passed in
+ * (from savings.js `monthSavings`) to avoid a circular import.
+ */
+export function leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth = 0 }) {
+  return monthIncome(incomes) - monthlyFixedTotal(fixedCosts) - monthSpend(expenses) - savedThisMonth
+}

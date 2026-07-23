@@ -8,6 +8,7 @@ import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
 import {
   monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal, accountBalance,
+  leftToSpendThisMonth,
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
@@ -32,7 +33,7 @@ export default function Dashboard() {
   const fixedMonth = useMemo(() => monthlyFixedTotal(fixedCosts), [fixedCosts])
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
   const available = incomeMonth - fixedMonth
-  const leftToSpend = available - spentMonth - savedMonth
+  const leftToSpend = leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth })
   const balance = useMemo(() => accountBalance(incomes, expenses), [incomes, expenses])
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])

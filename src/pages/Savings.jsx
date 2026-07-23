@@ -15,12 +15,13 @@ import { todayISO, formatDate } from '../lib/dates'
 import {
   goalProgress, totalSaved, monthSavings, savingsPieData,
 } from '../logic/savings'
+import { leftToSpendThisMonth } from '../logic/selectors'
 
 const blankGoal = { name: '', icon: 'PiggyBank', color: '#22c55e', target_amount: '', target_date: '', monthly_target: '' }
 
 export default function Savings() {
   const {
-    savingsGoals, savingsContributions,
+    savingsGoals, savingsContributions, incomes, expenses, fixedCosts,
     addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
   } = useData()
   const [editing, setEditing] = useState(null) // id | 'new' | null
@@ -31,6 +32,10 @@ export default function Savings() {
   const saved = useMemo(() => totalSaved(savingsContributions), [savingsContributions])
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
   const pie = useMemo(() => savingsPieData(savingsGoals, savingsContributions), [savingsGoals, savingsContributions])
+  const availableToSave = useMemo(
+    () => leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth }),
+    [incomes, expenses, fixedCosts, savedMonth],
+  )
 
   function startNew() {
     setDraft(blankGoal); setEditing('new'); setError(null)
@@ -86,6 +91,21 @@ export default function Savings() {
       <PageHeader title="Sparen" subtitle="Ziele setzen, in deine Töpfe einzahlen und sie wachsen sehen.">
         <button onClick={startNew} className="btn-primary"><Plus className="h-4 w-4" /> Neues Ziel</button>
       </PageHeader>
+
+      {/* How much is actually free to save this month (guards against saving into the red) */}
+      <div className={`card mb-5 p-5 ${availableToSave <= 0 ? 'border-bad/30' : ''}`}>
+        <span className="stat-label flex items-center gap-1.5">
+          <Wallet className="h-4 w-4" /> Verfügbar zum Sparen diesen Monat
+        </span>
+        <div className={`mt-1.5 truncate text-2xl font-bold sm:text-3xl ${availableToSave > 0 ? 'text-green-400' : 'text-red-300'}`}>
+          <Money value={availableToSave} />
+        </div>
+        <p className="mt-1.5 text-xs text-zinc-500">
+          {availableToSave > 0
+            ? 'Bleibt nach Einnahmen − Fixkosten − Ausgaben − bereits Gespartem. So viel kannst du diesen Monat noch in einen Topf legen.'
+            : 'Diesen Monat ist nichts zum Sparen übrig — du bist im Minus. Sparen lohnt sich erst wieder, wenn Geld verfügbar ist.'}
+        </p>
+      </div>
 
       {/* Summary */}
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
