@@ -30,6 +30,17 @@ create table if not exists public.budgets (
   unique (user_id, category_id)
 );
 
+-- Planning-only figure: the income the user expects to distribute across
+-- budgets. Deliberately separate from `incomes` so it never counts as money
+-- actually received (Dashboard/Kontostand stay based on real incomes).
+create table if not exists public.budget_settings (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  planned_income numeric(12, 2) not null default 0,
+  created_at     timestamptz not null default now(),
+  unique (user_id)
+);
+
 create table if not exists public.incomes (
   id             uuid primary key default gen_random_uuid(),
   user_id        uuid not null default auth.uid() references auth.users (id) on delete cascade,
@@ -109,6 +120,7 @@ create index if not exists incomes_user_date_idx  on public.incomes (user_id, da
 -- ---------------------------------------------------------------------------
 alter table public.categories            enable row level security;
 alter table public.budgets               enable row level security;
+alter table public.budget_settings       enable row level security;
 alter table public.incomes               enable row level security;
 alter table public.expenses              enable row level security;
 alter table public.fixed_costs           enable row level security;
@@ -118,7 +130,7 @@ alter table public.savings_contributions enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['categories', 'budgets', 'incomes', 'expenses', 'fixed_costs', 'savings_goals', 'savings_contributions']
+  foreach t in array array['categories', 'budgets', 'budget_settings', 'incomes', 'expenses', 'fixed_costs', 'savings_goals', 'savings_contributions']
   loop
     execute format('drop policy if exists "own_select" on public.%I;', t);
     execute format('drop policy if exists "own_insert" on public.%I;', t);
@@ -148,6 +160,11 @@ end $$;
 do $$
 begin
   alter publication supabase_realtime add table public.budgets;
+exception when others then null;
+end $$;
+do $$
+begin
+  alter publication supabase_realtime add table public.budget_settings;
 exception when others then null;
 end $$;
 do $$

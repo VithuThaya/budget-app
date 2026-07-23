@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Target, Check, Loader2, Wallet } from 'lucide-react'
+import { Target, Check, Loader2 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
-import { spendByCategory, expectedMonthlyIncome, monthlyFixedTotal } from '../logic/selectors'
+import { spendByCategory, monthlyFixedTotal } from '../logic/selectors'
 import { parseAmount } from '../lib/money'
 import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
@@ -12,14 +11,14 @@ import Money from '../components/Money'
 import { formatMonthLabel } from '../lib/dates'
 
 export default function Budgets() {
-  const { categories, budgets, expenses, incomes, fixedCosts, setBudget } = useData()
+  const { categories, budgets, expenses, fixedCosts, plannedIncome, setPlannedIncome, setBudget } = useData()
   const spent = useMemo(() => spendByCategory(expenses, { monthOnly: true }), [expenses])
 
-  // Zero-based anchor: expected monthly income − fixed costs = the pot to
-  // distribute. Expected income is stable (recurring salary) so it works before
-  // payday; only 0 when no income at all is recorded (→ guard below).
-  const plannedIncome = useMemo(() => expectedMonthlyIncome(incomes), [incomes])
-  const available = useMemo(() => plannedIncome - monthlyFixedTotal(fixedCosts), [plannedIncome, fixedCosts])
+  // Zero-based anchor: the income the user types here − fixed costs = the pot to
+  // distribute across budgets. This is a planning figure, independent of the
+  // real incomes/Kontostand — no salary needs to have arrived yet.
+  const fixedMonthly = useMemo(() => monthlyFixedTotal(fixedCosts), [fixedCosts])
+  const available = plannedIncome - fixedMonthly
 
   const budgetByCat = useMemo(
     () => new Map(budgets.map((b) => [b.category_id, Number(b.amount)])),
@@ -55,44 +54,39 @@ export default function Budgets() {
     <div>
       <PageHeader title="Budgets" subtitle={`Monatslimits • ${formatMonthLabel()}`} />
 
-      {/* Zero-based: distribute expected income across budgets */}
-      {plannedIncome <= 0 ? (
-        <div className="card mb-5 flex flex-col items-start gap-3 p-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-            <Wallet className="h-5 w-5" />
-          </span>
-          <div>
-            <p className="font-medium text-zinc-100">Erfasse zuerst dein Einkommen</p>
-            <p className="mt-1 text-sm text-zinc-400">
-              Sobald dein Lohn hinterlegt ist, rechnen wir dein verteilbares Geld aus:
-              Einkommen − Fixkosten.
-            </p>
-          </div>
-          <Link to="/incomes" className="btn-primary px-4 py-2 text-sm">Einnahmen erfassen</Link>
+      {/* Zero-based: type your income, distribute (income − fixed costs) across budgets */}
+      <div className="card mb-5 p-5">
+        <span className="stat-label">Verfügbar zum Verteilen</span>
+
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <IncomeField value={plannedIncome} onSave={setPlannedIncome} />
+          <span className="text-sm text-zinc-500">− Fixkosten <Money value={fixedMonthly} /></span>
         </div>
-      ) : (
-        <div className="card mb-5 p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <span className="stat-label">Verfügbar zum Verteilen</span>
-              <p className="text-xs text-zinc-500">Erwartetes Einkommen − Fixkosten</p>
-              <div className={`mt-1 text-2xl font-semibold ${available < 0 ? 'text-red-300' : 'text-zinc-50'}`}>
-                <Money value={available} />
+
+        {plannedIncome > 0 ? (
+          <>
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+              <div className={`text-2xl font-semibold ${available < 0 ? 'text-red-300' : 'text-zinc-50'}`}>
+                <Money value={available} /> <span className="text-sm font-normal text-zinc-500">verfügbar</span>
               </div>
+              <span className={`chip ${allocRatio > 1 ? 'bg-bad/10 text-red-300' : allocRatio >= 0.999 ? 'bg-good/10 text-green-300' : 'bg-white/5 text-zinc-300'}`}>
+                {Math.round(allocRatio * 100)}% verplant
+              </span>
             </div>
-            <span className={`chip ${allocRatio > 1 ? 'bg-bad/10 text-red-300' : allocRatio >= 0.999 ? 'bg-good/10 text-green-300' : 'bg-white/5 text-zinc-300'}`}>
-              {Math.round(allocRatio * 100)}% verplant
-            </span>
-          </div>
-          <div className="mt-3"><ProgressBar ratio={allocRatio} /></div>
-          <div className="mt-3 flex items-center justify-between text-sm">
-            <span className="text-zinc-400">Verteilt: <Money value={totals.budgeted} /></span>
-            {toAllocate >= 0
-              ? <span className="text-zinc-300"><Money value={toAllocate} /> übrig</span>
-              : <span className="text-red-300"><Money value={-toAllocate} /> zu viel verteilt</span>}
-          </div>
-        </div>
-      )}
+            <div className="mt-3"><ProgressBar ratio={allocRatio} /></div>
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-zinc-400">Verteilt: <Money value={totals.budgeted} /></span>
+              {toAllocate >= 0
+                ? <span className="text-zinc-300"><Money value={toAllocate} /> übrig</span>
+                : <span className="text-red-300"><Money value={-toAllocate} /> zu viel verteilt</span>}
+            </div>
+          </>
+        ) : (
+          <p className="mt-3 text-sm text-zinc-400">
+            Trag dein monatliches Einkommen ein, dann siehst du, wie viel du auf die Budgets verteilen kannst.
+          </p>
+        )}
+      </div>
 
       {/* Overall summary */}
       <div className="card mb-5 p-5">
@@ -121,6 +115,39 @@ export default function Budgets() {
           />
         ))}
       </div>
+    </div>
+  )
+}
+
+function IncomeField({ value, onSave }) {
+  const [text, setText] = useState(value ? String(value) : '')
+  const [busy, setBusy] = useState(false)
+  const dirty = parseAmount(text) !== value
+
+  async function save() {
+    if (!dirty) return
+    setBusy(true)
+    try { await onSave(parseAmount(text)) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-zinc-400">Einkommen</span>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-500">CHF</span>
+        <input
+          inputMode="decimal"
+          className="input w-28 pl-10"
+          placeholder="0.00"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && save()}
+        />
+      </div>
+      <button onClick={save} disabled={busy || !dirty}
+        className="btn-primary h-[42px] px-3" aria-label="Einkommen speichern">
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+      </button>
     </div>
   )
 }

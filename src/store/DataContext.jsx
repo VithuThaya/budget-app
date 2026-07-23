@@ -17,12 +17,13 @@ import { todayISO } from '../lib/dates'
 const DataContext = createContext(null)
 export const useData = () => useContext(DataContext)
 
-const TABLES = ['categories', 'budgets', 'incomes', 'expenses', 'fixed_costs', 'savings_goals', 'savings_contributions']
+const TABLES = ['categories', 'budgets', 'budget_settings', 'incomes', 'expenses', 'fixed_costs', 'savings_goals', 'savings_contributions']
 
 export function DataProvider({ session, children }) {
   const userId = session?.user?.id
   const [categories, setCategories] = useState([])
   const [budgets, setBudgets] = useState([])
+  const [budgetSettings, setBudgetSettings] = useState([])
   const [incomes, setIncomes] = useState([])
   const [expenses, setExpenses] = useState([])
   const [fixedCosts, setFixedCosts] = useState([])
@@ -37,6 +38,7 @@ export function DataProvider({ session, children }) {
     () => ({
       categories: setCategories,
       budgets: setBudgets,
+      budget_settings: setBudgetSettings,
       incomes: setIncomes,
       expenses: setExpenses,
       fixed_costs: setFixedCosts,
@@ -52,16 +54,17 @@ export function DataProvider({ session, children }) {
     setLoading(true)
     setError(null)
     try {
-      const [cats, buds, incs, exps, fixs, goals, contribs] = await Promise.all([
+      const [cats, buds, settings, incs, exps, fixs, goals, contribs] = await Promise.all([
         supabase.from('categories').select('*').order('created_at', { ascending: true }),
         supabase.from('budgets').select('*'),
+        supabase.from('budget_settings').select('*'),
         supabase.from('incomes').select('*').order('date', { ascending: false }),
         supabase.from('expenses').select('*').order('date', { ascending: false }),
         supabase.from('fixed_costs').select('*').order('created_at', { ascending: true }),
         supabase.from('savings_goals').select('*').order('created_at', { ascending: true }),
         supabase.from('savings_contributions').select('*').order('date', { ascending: false }),
       ])
-      for (const r of [cats, buds, incs, exps, fixs, goals, contribs]) if (r.error) throw r.error
+      for (const r of [cats, buds, settings, incs, exps, fixs, goals, contribs]) if (r.error) throw r.error
 
       let categoryRows = cats.data || []
       // Seed default categories once for brand-new accounts.
@@ -76,6 +79,7 @@ export function DataProvider({ session, children }) {
 
       setCategories(categoryRows)
       setBudgets(buds.data || [])
+      setBudgetSettings(settings.data || [])
       setIncomes(incs.data || [])
       setExpenses(exps.data || [])
       setFixedCosts(fixs.data || [])
@@ -210,6 +214,17 @@ export function DataProvider({ session, children }) {
   )
   const deleteBudget = useCallback((id) => remove('budgets', id), [remove])
 
+  // Planned monthly income for the zero-based Budgets header (one row per user).
+  const plannedIncome = Number(budgetSettings[0]?.planned_income ?? 0)
+  const setPlannedIncome = useCallback(
+    async (amount) => {
+      const existing = budgetSettings[0]
+      if (existing) return update('budget_settings', existing.id, { planned_income: amount })
+      return create('budget_settings', { planned_income: amount })
+    },
+    [budgetSettings, create, update],
+  )
+
   // Quick lookup map for rendering category icon/color/name on transactions.
   const categoryMap = useMemo(() => {
     const m = new Map()
@@ -229,6 +244,7 @@ export function DataProvider({ session, children }) {
     addContribution, deleteContribution,
     addCategory, updateCategory, deleteCategory,
     setBudget, deleteBudget,
+    plannedIncome, setPlannedIncome,
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
