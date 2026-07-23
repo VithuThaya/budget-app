@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Target, Check, Loader2 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
-import { spendByCategory } from '../logic/selectors'
+import { spendByCategory, availableToSpend } from '../logic/selectors'
 import { parseAmount } from '../lib/money'
 import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
@@ -11,8 +11,11 @@ import Money from '../components/Money'
 import { formatMonthLabel } from '../lib/dates'
 
 export default function Budgets() {
-  const { categories, budgets, expenses, setBudget } = useData()
+  const { categories, budgets, expenses, incomes, fixedCosts, setBudget } = useData()
   const spent = useMemo(() => spendByCategory(expenses, { monthOnly: true }), [expenses])
+
+  // Zero-based anchor: Einkommen − Fixkosten = the pot you distribute across budgets.
+  const available = useMemo(() => availableToSpend(incomes, fixedCosts), [incomes, fixedCosts])
 
   const budgetByCat = useMemo(
     () => new Map(budgets.map((b) => [b.category_id, Number(b.amount)])),
@@ -41,10 +44,35 @@ export default function Budgets() {
   }
 
   const overallRatio = totals.budgeted > 0 ? totals.used / totals.budgeted : 0
+  const toAllocate = available - totals.budgeted // >0 = still free, <0 = over-allocated
+  const allocRatio = available > 0 ? totals.budgeted / available : 0
 
   return (
     <div>
       <PageHeader title="Budgets" subtitle={`Monatslimits • ${formatMonthLabel()}`} />
+
+      {/* Zero-based: distribute available money across budgets */}
+      <div className="card mb-5 p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <span className="stat-label">Verfügbar zum Verteilen</span>
+            <p className="text-xs text-zinc-500">Einkommen − Fixkosten</p>
+            <div className="mt-1 text-2xl font-semibold text-zinc-50">
+              <Money value={available} />
+            </div>
+          </div>
+          <span className={`chip ${allocRatio > 1 ? 'bg-bad/10 text-red-300' : allocRatio >= 0.999 ? 'bg-good/10 text-green-300' : 'bg-white/5 text-zinc-300'}`}>
+            {Math.round(allocRatio * 100)}% verplant
+          </span>
+        </div>
+        <div className="mt-3"><ProgressBar ratio={allocRatio} /></div>
+        <div className="mt-3 flex items-center justify-between text-sm">
+          <span className="text-zinc-400">Verteilt: <Money value={totals.budgeted} /></span>
+          {toAllocate >= 0
+            ? <span className="text-zinc-300"><Money value={toAllocate} /> übrig</span>
+            : <span className="text-red-300"><Money value={-toAllocate} /> zu viel verteilt</span>}
+        </div>
+      </div>
 
       {/* Overall summary */}
       <div className="card mb-5 p-5">
