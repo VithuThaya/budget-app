@@ -158,7 +158,7 @@ function MobileDock({ onNavigate, onSignOut }) {
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
             aria-expanded={open}
-            className="relative -mt-7 mx-0.5 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-accent text-white shadow-glow ring-4 ring-ink-900 transition-transform duration-200 active:scale-95"
+            className="relative -mt-7 mx-0.5 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-gradient-to-b from-accent-soft to-accent-ring text-white shadow-[0_0_28px_2px_rgba(37,99,235,0.55),0_10px_22px_-6px_rgba(37,99,235,0.65)] ring-4 ring-ink-900 transition-transform duration-200 active:scale-95"
           >
             <Plus
               className={`absolute h-7 w-7 transition-all duration-300 ${open ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}
