@@ -94,57 +94,66 @@ export function availableToSpend(incomes, fixedCosts) {
   return monthIncome(incomes) - monthlyFixedTotal(fixedCosts)
 }
 
-// How often each period bills within a month (used to step charge dates).
+// How many months apart each period recurs (used to decide when a non-monthly
+// cost is due again from its last paid month).
 const PERIOD_STEP_MONTHS = { monthly: 1, quarterly: 3, yearly: 12 }
 
-/**
- * How many times a single fixed cost has actually been billed on/before `refISO`.
- * Billing model: a cost bills on its `due_day` (day of month, default 1), the
- * first time on the first due_day on/after it was created, then every period
- * thereafter — monthly every month, quarterly every 3, yearly every 12, weekly
- * every 7 days. This mirrors the real bank debit dates the user enters.
- * ponytail: due_day clamped to 1..28 so it's valid in every month; a cost that
- * bills on the 29th–31st is treated as the 28th.
- */
-export function fixedChargeCount(fc, refISO = todayISO()) {
-  if (fc.active === false) return 0
-  const created = parseISO(String(fc.created_at ?? refISO).slice(0, 10))
-  const ref = parseISO(refISO)
-  if (fc.period === 'weekly') {
-    const first = addDays(created, 7)
-    if (ref < first) return 0
-    return Math.floor((ref - first) / (7 * 86400000)) + 1
-  }
-  const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
-  const day = Math.min(Math.max(Number(fc.due_day) || 1, 1), 28)
-  // First billing = the first `day`-of-month on/after the created date.
-  let fm = created.getMonth()
-  if (created.getDate() > day) fm += 1
-  const first = new Date(created.getFullYear(), fm, day)
-  if (ref < first) return 0
-  const months = (ref.getFullYear() - first.getFullYear()) * 12 + (ref.getMonth() - first.getMonth())
-  let n = Math.floor(months / step) // 0-based index of the latest occurrence in/before ref's month
-  const occ = new Date(first.getFullYear(), first.getMonth() + n * step, day)
-  if (occ > ref) n -= 1 // that occurrence's day hasn't arrived yet
-  return n + 1
+const monthKey = (iso) => String(iso).slice(0, 7) // 'YYYY-MM'
+function monthsBetweenKeys(a, b) {
+  const [ay, am] = a.split('-').map(Number)
+  const [by, bm] = b.split('-').map(Number)
+  return (by - ay) * 12 + (bm - am)
 }
 
-/** Total fixed-cost money actually billed to the account on/before `refISO`. */
-export function fixedChargesToDate(fixedCosts, refISO = todayISO()) {
-  return (fixedCosts || []).reduce((sum, fc) => sum + Number(fc.amount) * fixedChargeCount(fc, refISO), 0)
+/**
+ * Fixed costs are settled by the user ticking "bezahlt" per month — bank debit
+ * dates drift around weekends/holidays, so a computed date can't be trusted.
+ * `paid_months` (text[] of 'YYYY-MM') records the months a cost was actually
+ * paid. The running balance subtracts every paid occurrence; the month-end
+ * projection additionally subtracts what's still open this month.
+ */
+
+/** Total fixed-cost money actually paid to date (sum over ticked months). */
+export function fixedPaidTotal(fixedCosts) {
+  return (fixedCosts || []).reduce((s, fc) => s + Number(fc.amount) * (fc.paid_months || []).length, 0)
+}
+
+/** Is this cost still due (unpaid) in the month of `refISO`? */
+export function isFixedOpenThisMonth(fc, refISO = todayISO()) {
+  if (fc.active === false) return false
+  const cur = monthKey(refISO)
+  const paid = fc.paid_months || []
+  if (paid.includes(cur)) return false
+  if (fc.period === 'weekly' || fc.period === 'monthly') return true
+  // Non-monthly: due again once `step` months have passed since the last payment.
+  const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
+  const last = paid.length ? [...paid].sort().at(-1) : null
+  return last ? monthsBetweenKeys(last, cur) >= step : true
+}
+
+/** Sum of fixed costs still open (unpaid) in the month of `refISO`. */
+export function fixedOpenThisMonth(fixedCosts, refISO = todayISO()) {
+  return (fixedCosts || [])
+    .filter((fc) => isFixedOpenThisMonth(fc, refISO))
+    .reduce((s, fc) => s + Number(fc.amount), 0)
 }
 
 /**
  * Running account balance, bank-style: every income minus every expense minus
- * every fixed cost that has actually been billed to date (see fixedChargesToDate).
- * The user carries prior-month leftovers forward as an income, so this mirrors
- * their real bank balance and naturally rolls into next month. Savings pots
+ * every fixed cost the user has ticked as paid (see fixedPaidTotal). Mirrors the
+ * real bank balance and carries prior-month leftovers forward. Savings pots
  * (earmarks, money still on the account) are intentionally NOT subtracted here.
  */
-export function accountBalance(incomes, expenses, fixedCosts = [], refISO = todayISO()) {
+export function accountBalance(incomes, expenses, fixedCosts = []) {
   const income = (incomes || []).reduce((a, i) => a + Number(i.amount), 0)
   const spent = (expenses || []).reduce((a, e) => a + Number(e.amount), 0)
-  return income - spent - fixedChargesToDate(fixedCosts, refISO)
+  return income - spent - fixedPaidTotal(fixedCosts)
+}
+
+/** Projected balance at month-end if no more income is entered: current balance
+ *  minus the fixed costs still open this month. */
+export function projectedMonthEndBalance(incomes, expenses, fixedCosts = [], refISO = todayISO()) {
+  return accountBalance(incomes, expenses, fixedCosts) - fixedOpenThisMonth(fixedCosts, refISO)
 }
 
 /**

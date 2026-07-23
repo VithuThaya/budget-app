@@ -65,7 +65,7 @@ create table if not exists public.fixed_costs (
   name        text not null,
   amount      numeric(12, 2) not null default 0,
   period      text not null default 'monthly',  -- 'weekly' | 'monthly' | 'quarterly' | 'yearly'
-  due_day     smallint not null default 1,       -- day of month the cost is billed (1..28); drives Kontostand & month-end projection
+  paid_months text[] not null default '{}',      -- months ('YYYY-MM') the user ticked as paid; drives Kontostand & month-end projection
   active      boolean not null default true,
   notes       text,
   created_at  timestamptz not null default now()
