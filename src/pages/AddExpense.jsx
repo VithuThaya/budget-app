@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { Loader2, Save, ArrowLeft, Search, Sparkles } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
@@ -12,6 +12,7 @@ export default function AddExpense() {
   const { id } = useParams()
   const isEdit = Boolean(id)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { categories, expenses, addExpense, updateExpense } = useData()
 
   const [amount, setAmount] = useState('')
@@ -52,10 +53,27 @@ export default function AddExpense() {
     }
   }, [isEdit, id, expenses])
 
-  // Default category to the first one once loaded (new expense only).
+  // Prefill from URL params (iPhone Shortcut deep link: ?amount=&date=&notes=).
+  // New expense only; runs once. parseAmount runs on submit, so amount stays raw.
+  const prefilled = useRef(false)
   useEffect(() => {
-    if (!isEdit && !categoryId && categories.length) setCategoryId(categories[0].id)
-  }, [categories, isEdit, categoryId])
+    if (isEdit || prefilled.current) return
+    const a = searchParams.get('amount')
+    const d = searchParams.get('date')
+    const n = searchParams.get('notes')
+    if (a == null && d == null && n == null) return
+    prefilled.current = true
+    if (a != null) setAmount(a)
+    if (n != null) setNotes(n)
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d)
+  }, [isEdit, searchParams])
+
+  // Default category once loaded (new expense only): prefer the history-based
+  // suggestion (from notes), else the first category.
+  useEffect(() => {
+    if (isEdit || categoryId || !categories.length) return
+    setCategoryId(suggestedId || categories[0].id)
+  }, [categories, isEdit, categoryId, suggestedId])
 
   async function handleSubmit(e) {
     e.preventDefault()
