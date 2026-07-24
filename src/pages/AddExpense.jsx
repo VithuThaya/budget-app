@@ -68,6 +68,20 @@ export default function AddExpense() {
     if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) setDate(d)
   }, [isEdit, searchParams])
 
+  // Category from URL param (Shortcut menu picks it): match by name, case-
+  // insensitive. Wins over the default below because it sets categoryId first.
+  const catPrefilled = useRef(false)
+  useEffect(() => {
+    if (isEdit || catPrefilled.current || !categories.length) return
+    const c = searchParams.get('category')
+    if (!c) return
+    const match = categories.find((x) => x.name.toLowerCase() === c.trim().toLowerCase())
+    if (match) {
+      setCategoryId(match.id)
+      catPrefilled.current = true
+    }
+  }, [isEdit, categories, searchParams])
+
   // Default category once loaded (new expense only): prefer the history-based
   // suggestion (from notes), else the first category.
   useEffect(() => {
