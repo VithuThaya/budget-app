@@ -96,6 +96,18 @@ export function DataProvider({ session, children }) {
     loadAll()
   }, [loadAll])
 
+  // iOS suspends the PWA in the background, killing the realtime socket — so
+  // changes made meanwhile (e.g. an expense added via the iPhone Shortcut in a
+  // fresh launch) never reach this instance. Re-load whenever the app returns
+  // to the foreground so no manual close/reopen or refresh is needed.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadAll()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [loadAll])
+
   // ---- Realtime sync across devices --------------------------------------
   useEffect(() => {
     if (!isConfigured || !userId) return
