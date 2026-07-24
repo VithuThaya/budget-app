@@ -187,3 +187,41 @@ begin
   alter publication supabase_realtime add table public.savings_contributions;
 exception when others then null;
 end $$;
+
+-- RPC for the iPhone Shortcut direct-write path: send the category NAME,
+-- resolve it to the caller's own category_id server-side. SECURITY INVOKER so
+-- RLS applies and auth.uid() is the calling user (never trusts a client-sent
+-- user_id). Unknown/absent name -> category_id null (expense still saves;
+-- categorise later in the app). All params default so partial calls work.
+create or replace function public.add_expense(
+  amount numeric default 0,
+  notes text default null,
+  expense_date date default current_date,
+  category_name text default null
+) returns public.expenses
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_cat uuid;
+  v_row public.expenses;
+begin
+  if category_name is not null and length(trim(category_name)) > 0 then
+    select c.id into v_cat
+    from public.categories c
+    where c.user_id = auth.uid()
+      and lower(c.name) = lower(trim(category_name))
+    limit 1;
+  end if;
+
+  insert into public.expenses (user_id, amount, category_id, date, notes)
+  values (auth.uid(), amount, v_cat, coalesce(expense_date, current_date),
+          nullif(trim(notes), ''))
+  returning * into v_row;
+
+  return v_row;
+end;
+$$;
+
+grant execute on function public.add_expense(numeric, text, date, text) to authenticated;
