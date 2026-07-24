@@ -37,15 +37,26 @@ export function formatPct(ratio, { digits = 0 } = {}) {
   return `${(n * 100).toFixed(digits)}%`
 }
 
-/** Parse a user-typed amount ("12.50", "1'234,5") into a clean number. */
+/**
+ * Parse a user-typed amount into a clean number, locale-agnostically.
+ * Handles "12.50", "12,50", "1'234.55", "1'234,55", "1.234,55" (de),
+ * "1,234.55" (en) and "CHF 42". The separator that appears *last* is treated
+ * as the decimal point; the other is a thousands separator.
+ */
 export function parseAmount(input) {
   if (typeof input === 'number') return input
   if (!input) return 0
-  const cleaned = String(input)
-    .replace(/['\s’]/g, '')
-    .replace(',', '.')
-    .replace(/[^0-9.]/g, '')
-  const n = parseFloat(cleaned)
+  let s = String(input).replace(/['\s’]/g, '').replace(/[^0-9.,-]/g, '')
+  const lastComma = s.lastIndexOf(',')
+  const lastDot = s.lastIndexOf('.')
+  if (lastComma > lastDot) {
+    s = s.replace(/\./g, '').replace(',', '.') // "1.234,55" -> "1234.55"
+  } else if (lastDot > lastComma) {
+    s = s.replace(/,/g, '') // "1,234.55" -> "1234.55"
+  } else {
+    s = s.replace(',', '.') // single separator (or none): comma -> decimal
+  }
+  const n = parseFloat(s)
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0
 }
 

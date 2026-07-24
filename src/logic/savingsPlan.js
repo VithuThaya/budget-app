@@ -29,7 +29,7 @@ function buildPlan({ horizon, rates, categoryMap }) {
   const lines = []
   for (const [catId, rate] of rates.entries()) {
     const cat = categoryMap.get(catId)
-    const name = cat?.name || 'Uncategorised'
+    const name = cat?.name || 'Ohne Kategorie'
     const baseline = rate * horizon // projected spend at current pace
     if (baseline <= 0) continue
     const reduction = REDUCTION_BY_ICON[cat?.icon] ?? DEFAULT_REDUCTION

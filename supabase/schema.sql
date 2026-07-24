@@ -207,6 +207,12 @@ declare
   v_cat uuid;
   v_row public.expenses;
 begin
+  -- Match the client-side rule (AddExpense.jsx): reject non-positive amounts so
+  -- a buggy/compromised Shortcut can't skew the user's own totals.
+  if amount is null or amount <= 0 then
+    raise exception 'amount must be greater than zero';
+  end if;
+
   if category_name is not null and length(trim(category_name)) > 0 then
     select c.id into v_cat
     from public.categories c
@@ -224,4 +230,9 @@ begin
 end;
 $$;
 
+-- Least privilege: Supabase's default privileges grant EXECUTE on new public
+-- functions to the anon role; revoke it so only authenticated (logged-in)
+-- sessions can call this. Must run AFTER create-or-replace, which re-applies
+-- the default grant each time.
+revoke execute on function public.add_expense(numeric, text, date, text) from public, anon;
 grant execute on function public.add_expense(numeric, text, date, text) to authenticated;

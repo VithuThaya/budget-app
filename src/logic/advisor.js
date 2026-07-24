@@ -22,7 +22,7 @@ export function generateAlerts({ expenses, budgets, categoryMap }) {
   const monthByCat = spendByCategory(expenses, { monthOnly: true })
 
   for (const [catId, cat] of categoryMap.entries()) {
-    const name = cat?.name || 'A category'
+    const name = cat?.name || 'Kategorie'
 
     // --- Spike detection: current week vs trailing 4-week average ---------
     const avg = trailingWeeklyAverage(expenses, catId, 4)

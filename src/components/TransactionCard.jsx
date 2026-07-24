@@ -21,6 +21,9 @@ export default function TransactionCard({
   return (
     <div
       onClick={editTo ? () => navigate(editTo) : undefined}
+      role={editTo ? 'button' : undefined}
+      tabIndex={editTo ? 0 : undefined}
+      onKeyDown={editTo ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(editTo) } } : undefined}
       className={`group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-850/60 px-3.5 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${editTo ? 'cursor-pointer' : ''}`}
     >
       <span

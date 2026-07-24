@@ -9,7 +9,7 @@ import { BarChart3 } from 'lucide-react'
 export default function WeeklyBars({ data, height = 240 }) {
   const hasData = data?.some((d) => d.total > 0)
   if (!hasData) {
-    return <EmptyState icon={BarChart3} title="No weekly data" message="Spend across weeks will be compared here." />
+    return <EmptyState icon={BarChart3} title="Keine Wochendaten" message="Hier werden die Ausgaben über mehrere Wochen verglichen." />
   }
   return (
     <div className="w-full" style={{ height }}>
@@ -22,7 +22,7 @@ export default function WeeklyBars({ data, height = 240 }) {
           <Tooltip
             cursor={{ fill: '#ffffff08' }}
             contentStyle={{ background: '#161619', border: '1px solid #27272a', borderRadius: 12, color: '#fafafa' }}
-            formatter={(v) => [formatCHF(v), 'Spent']}
+            formatter={(v) => [formatCHF(v), 'Ausgegeben']}
           />
           <Bar dataKey="total" radius={[6, 6, 0, 0]} maxBarSize={48}>
             {data.map((_, i) => (

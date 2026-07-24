@@ -33,6 +33,7 @@ export function DataProvider({ session, children }) {
   const [error, setError] = useState(null)
   const seededRef = useRef(false)
   const recurredForRef = useRef(null)
+  const loadGenRef = useRef(0)
 
   const setters = useMemo(
     () => ({
@@ -51,6 +52,7 @@ export function DataProvider({ session, children }) {
   // ---- Initial load -------------------------------------------------------
   const loadAll = useCallback(async () => {
     if (!isConfigured || !userId) return
+    const gen = ++loadGenRef.current // guard against out-of-order overlapping loads
     setLoading(true)
     setError(null)
     try {
@@ -65,6 +67,7 @@ export function DataProvider({ session, children }) {
         supabase.from('savings_contributions').select('*').order('date', { ascending: false }),
       ])
       for (const r of [cats, buds, settings, incs, exps, fixs, goals, contribs]) if (r.error) throw r.error
+      if (loadGenRef.current !== gen) return // a newer load started; drop this result
 
       let categoryRows = cats.data || []
       // Seed default categories once for brand-new accounts.
@@ -76,6 +79,7 @@ export function DataProvider({ session, children }) {
           .select()
         if (!seedErr && seeded) categoryRows = seeded
       }
+      if (loadGenRef.current !== gen) return // seeding awaited; re-check freshness
 
       setCategories(categoryRows)
       setBudgets(buds.data || [])
@@ -86,9 +90,9 @@ export function DataProvider({ session, children }) {
       setSavingsGoals(goals.data || [])
       setSavingsContributions(contribs.data || [])
     } catch (e) {
-      setError(e.message || 'Failed to load data')
+      if (loadGenRef.current === gen) setError(e.message || 'Failed to load data')
     } finally {
-      setLoading(false)
+      if (loadGenRef.current === gen) setLoading(false)
     }
   }, [userId])
 

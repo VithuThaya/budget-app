@@ -163,7 +163,7 @@ function MonthSwitcher({ cursor, setCursor, isCurrent }) {
     <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
       <button
         onClick={() => setCursor((c) => addMonths(c, -1))}
-        aria-label="Previous month"
+        aria-label="Vorheriger Monat"
         className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 cursor-pointer"
       >
         <ChevronLeft className="h-4 w-4" />
@@ -174,7 +174,7 @@ function MonthSwitcher({ cursor, setCursor, isCurrent }) {
       <button
         onClick={() => setCursor((c) => addMonths(c, 1))}
         disabled={isCurrent}
-        aria-label="Next month"
+        aria-label="Nächster Monat"
         className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
       >
         <ChevronRight className="h-4 w-4" />

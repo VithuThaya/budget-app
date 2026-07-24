@@ -85,7 +85,7 @@ export default function AddExpense() {
   // Default category once loaded (new expense only): prefer the history-based
   // suggestion (from notes), else the first category.
   useEffect(() => {
-    if (isEdit || categoryId || !categories.length) return
+    if (isEdit || categoryId || catPrefilled.current || !categories.length) return
     setCategoryId(suggestedId || categories[0].id)
   }, [categories, isEdit, categoryId, suggestedId])
 

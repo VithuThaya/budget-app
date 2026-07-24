@@ -9,7 +9,7 @@ import { LineChart as LineIcon } from 'lucide-react'
 export default function TrendLine({ data }) {
   const hasData = data?.some((d) => d.total > 0)
   if (!hasData) {
-    return <EmptyState icon={LineIcon} title="No trend yet" message="Your daily spending will appear here as you log expenses." />
+    return <EmptyState icon={LineIcon} title="Noch kein Verlauf" message="Deine täglichen Ausgaben erscheinen hier, sobald du Ausgaben erfasst." />
   }
   return (
     <div className="h-64 w-full">
@@ -27,7 +27,7 @@ export default function TrendLine({ data }) {
             tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toLocaleString('de-CH', { maximumFractionDigits: 1 })}k` : String(v))} />
           <Tooltip
             contentStyle={{ background: '#161619', border: '1px solid #27272a', borderRadius: 12, color: '#fafafa' }}
-            formatter={(v) => [formatCHF(v), 'Spent']}
+            formatter={(v) => [formatCHF(v), 'Ausgegeben']}
           />
           <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} fill="url(#trendFill)" />
         </AreaChart>

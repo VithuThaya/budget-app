@@ -34,20 +34,16 @@ export default function Dashboard() {
   const fixedDueMonth = useMemo(() => fixedDueThisMonth(fixedCosts), [fixedCosts])
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
   const carryover = useMemo(() => monthCarryover(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
-  const leftToSpend = leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth })
+  const leftToSpend = useMemo(
+    () => leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth }),
+    [incomes, expenses, fixedCosts, savedMonth],
+  )
   const fixedBilled = useMemo(() => fixedPaidTotal(fixedCosts), [fixedCosts])
   const balance = useMemo(() => accountBalance(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
   const totalIncome = useMemo(() => incomes.reduce((a, i) => a + Number(i.amount), 0), [incomes])
   const totalSpent = useMemo(() => expenses.reduce((a, e) => a + Number(e.amount), 0), [expenses])
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
-  const weekTrend = useMemo(() => {
-    const prev = weekly[weekly.length - 2]?.total || 0
-    const cur = weekly[weekly.length - 1]?.total || 0
-    if (prev === 0) return null
-    const pct = Math.round(((cur - prev) / prev) * 100)
-    return { dir: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat', label: `${Math.abs(pct)}% vs last wk` }
-  }, [weekly])
 
   const alerts = useMemo(
     () => generateAlerts({ expenses, budgets, categoryMap }),

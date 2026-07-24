@@ -30,7 +30,7 @@ export function categoryPieData(expenses, categoryMap, { monthOnly = true, ref }
   for (const [catId, value] of byCat.entries()) {
     if (value <= 0) continue
     const cat = categoryMap.get(catId)
-    rows.push({ name: cat?.name || 'Uncategorised', value, color: cat?.color || '#64748b', categoryId: catId })
+    rows.push({ name: cat?.name || 'Ohne Kategorie', value, color: cat?.color || '#64748b', categoryId: catId })
   }
   return rows.sort((a, b) => b.value - a.value)
 }

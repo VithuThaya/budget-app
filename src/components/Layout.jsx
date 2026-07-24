@@ -130,7 +130,7 @@ function MobileDock({ onNavigate, onSignOut }) {
           const cls = `${base} ${tone} ${anim}`
           const style = { transitionDelay: `${open ? i * 40 : 0}ms` }
           return item.to ? (
-            <NavLink key={item.key} to={item.to} onClick={close} className={cls} style={style}>
+            <NavLink key={item.key} to={item.to} onClick={close} className={cls} style={style} tabIndex={open ? 0 : -1}>
               {content}
             </NavLink>
           ) : (

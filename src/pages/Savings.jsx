@@ -182,7 +182,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
   async function handleAdd(e) {
     e.preventDefault()
     const value = parseAmount(amount)
-    if (value <= 0) return setError('Enter an amount greater than zero.')
+    if (value <= 0) return setError('Gib einen Betrag größer als null ein.')
     setBusy(true); setError(null)
     try {
       await addContribution({ goal_id: goal.id, amount: value, date, notes: note.trim() || null })
