@@ -6,7 +6,11 @@ import EmptyState from '../components/EmptyState'
 import Money from '../components/Money'
 import { parseAmount, formatCHF } from '../lib/money'
 import { monthlyFixedCost, monthlyFixedTotal, isFixedOpenThisMonth } from '../logic/selectors'
+import { nextDueDate } from '../logic/fixedSchedule'
 import { todayISO, formatMonthLabel } from '../lib/dates'
+
+/** '2026-07-25' -> '25.07.' — short debit-date label. */
+const shortDate = (iso) => (iso ? `${iso.slice(8, 10)}.${iso.slice(5, 7)}.` : '')
 
 const CUR_MONTH = todayISO().slice(0, 7) // 'YYYY-MM'
 
@@ -26,6 +30,7 @@ export default function FixedCosts() {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [period, setPeriod] = useState('monthly')
+  const [dueDay, setDueDay] = useState('')
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -33,11 +38,16 @@ export default function FixedCosts() {
   const monthlyTotal = monthlyFixedTotal(fixedCosts)
   const yearlyTotal = monthlyTotal * 12
 
-  // Tick a fixed cost as paid (or undo) for the current month.
+  // Manual correction path: tick as paid (or undo) for the current month. Costs
+  // with a due_day book themselves in DataContext — this stays for exceptions
+  // (a debit that did not happen, or one the app has not seen yet).
   function togglePaid(fc) {
-    const paid = fc.paid_months || []
-    const next = paid.includes(CUR_MONTH) ? paid.filter((m) => m !== CUR_MONTH) : [...paid, CUR_MONTH]
-    updateFixedCost(fc.id, { paid_months: next })
+    const payments = fc.payments || []
+    const paidNow = payments.some((p) => String(p.date).slice(0, 7) === CUR_MONTH)
+    const next = paidNow
+      ? payments.filter((p) => String(p.date).slice(0, 7) !== CUR_MONTH)
+      : [...payments, { date: todayISO(), amount: Number(fc.amount), auto: false }]
+    updateFixedCost(fc.id, { payments: next })
   }
 
   async function handleAdd(e) {
@@ -48,14 +58,17 @@ export default function FixedCosts() {
     setBusy(true)
     setError(null)
     try {
+      const day = dueDay ? Math.min(31, Math.max(1, parseInt(dueDay, 10))) : null
       await addFixedCost({
         name: name.trim(),
         amount: value,
         period,
+        due_day: Number.isNaN(day) ? null : day,
+        payments: [],
         active: true,
         notes: notes.trim() || null,
       })
-      setName(''); setAmount(''); setPeriod('monthly'); setNotes(''); setOpen(false)
+      setName(''); setAmount(''); setPeriod('monthly'); setDueDay(''); setNotes(''); setOpen(false)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -107,6 +120,15 @@ export default function FixedCosts() {
               </div>
             </div>
             <div className="sm:col-span-2">
+              <label htmlFor="fc-due-day" className="label">Abbuchungstag (optional)</label>
+              <input id="fc-due-day" inputMode="numeric" className="input" placeholder="z. B. 1 oder 25"
+                value={dueDay} onChange={(e) => setDueDay(e.target.value.replace(/\D/g, '').slice(0, 2))} />
+              <p className="mt-1.5 text-xs text-zinc-400">
+                Mit Tag bucht die App automatisch. Fällt der Tag auf ein Wochenende, wird
+                — wie beim Dauerauftrag — am Freitag davor abgebucht. Ohne Tag hakst du weiter selbst ab.
+              </p>
+            </div>
+            <div className="sm:col-span-2">
               <label htmlFor="fc-notes" className="label">Notiz (optional)</label>
               <input id="fc-notes" className="input" placeholder="Anbieter, Vertragsende…" value={notes}
                 onChange={(e) => setNotes(e.target.value)} />
@@ -135,8 +157,10 @@ export default function FixedCosts() {
           {fixedCosts.map((fc) => {
             const inactive = fc.active === false
             const showMonthly = fc.period !== 'monthly'
-            const paidThisMonth = (fc.paid_months || []).includes(CUR_MONTH)
+            const paidEntry = (fc.payments || []).find((p) => String(p.date).slice(0, 7) === CUR_MONTH)
+            const paidThisMonth = Boolean(paidEntry)
             const openThisMonth = isFixedOpenThisMonth(fc)
+            const nextDue = paidThisMonth ? null : nextDueDate(fc, todayISO())
             return (
               <div key={fc.id}
                 className={`rounded-xl border border-ink-800 bg-ink-850/60 px-3 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${inactive ? 'opacity-50' : ''}`}>
@@ -153,8 +177,16 @@ export default function FixedCosts() {
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-zinc-500">
                       <span className="chip bg-accent/10 text-accent-soft">{labelFor(fc.period)}</span>
-                      {!inactive && paidThisMonth && <span className="chip bg-good/10 text-green-300">bezahlt</span>}
-                      {!inactive && !paidThisMonth && openThisMonth && <span className="chip bg-amber-500/10 text-amber-300">offen</span>}
+                      {!inactive && paidThisMonth && (
+                        <span className="chip bg-good/10 text-green-300">
+                          bezahlt {shortDate(String(paidEntry.date))}{paidEntry.auto ? ' · automatisch' : ''}
+                        </span>
+                      )}
+                      {!inactive && !paidThisMonth && openThisMonth && (
+                        <span className="chip bg-amber-500/10 text-amber-300">
+                          {nextDue ? `fällig ${shortDate(nextDue)}` : 'offen'}
+                        </span>
+                      )}
                       {inactive && <span className="chip bg-ink-800 text-zinc-400">pausiert</span>}
                       {showMonthly && <span className="tabular-nums">≈ <Money value={monthlyFixedCost(fc)} />/Mt.</span>}
                     </div>

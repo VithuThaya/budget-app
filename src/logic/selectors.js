@@ -106,28 +106,34 @@ function monthsBetweenKeys(a, b) {
 }
 
 /**
- * Fixed costs are settled by the user ticking "bezahlt" per month — bank debit
- * dates drift around weekends/holidays, so a computed date can't be trusted.
- * `paid_months` (text[] of 'YYYY-MM') records the months a cost was actually
- * paid. The running balance subtracts every paid occurrence; the month-end
- * projection additionally subtracts what's still open this month.
+ * Fixed costs are settled through `payments`: one entry per actual debit,
+ * `{ date: 'YYYY-MM-DD', amount, auto }`. Costs with a `due_day` book themselves
+ * (see logic/fixedSchedule.js); the rest are ticked by hand. Recording the
+ * amount per occurrence is what keeps history stable — editing `amount` after a
+ * rent increase must never rewrite months that were already paid — and lets a
+ * weekly cost record all ~4.33 occurrences instead of a single one per month.
+ * The running balance subtracts every recorded payment; the month-end projection
+ * additionally subtracts what is still open this month.
  */
 
-/** Total fixed-cost money actually paid to date (sum over ticked months). */
+/** Total fixed-cost money actually debited to date. */
 export function fixedPaidTotal(fixedCosts) {
-  return (fixedCosts || []).reduce((s, fc) => s + Number(fc.amount) * (fc.paid_months || []).length, 0)
+  return (fixedCosts || []).reduce(
+    (s, fc) => s + (fc.payments || []).reduce((a, p) => a + Number(p.amount), 0),
+    0,
+  )
 }
 
 /** Is this cost still due (unpaid) in the month of `refISO`? */
 export function isFixedOpenThisMonth(fc, refISO = todayISO()) {
   if (fc.active === false) return false
   const cur = monthKey(refISO)
-  const paid = fc.paid_months || []
-  if (paid.includes(cur)) return false
+  const payments = fc.payments || []
+  if (payments.some((p) => monthKey(p.date) === cur)) return false
   if (fc.period === 'weekly' || fc.period === 'monthly') return true
   // Non-monthly: due again once `step` months have passed since the last payment.
   const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
-  const last = paid.length ? [...paid].sort().at(-1) : null
+  const last = payments.length ? payments.map((p) => monthKey(p.date)).sort().at(-1) : null
   return last ? monthsBetweenKeys(last, cur) >= step : true
 }
 
@@ -163,7 +169,9 @@ export function monthCarryover(incomes, expenses, fixedCosts, ref = todayISO()) 
   const cur = monthKey(ref)
   const before = (arr) => (arr || []).filter((x) => monthKey(x.date) < cur).reduce((a, x) => a + Number(x.amount), 0)
   const fixedPaidBefore = (fixedCosts || [])
-    .reduce((s, fc) => s + Number(fc.amount) * (fc.paid_months || []).filter((m) => m < cur).length, 0)
+    .reduce((s, fc) => s + (fc.payments || [])
+      .filter((p) => monthKey(p.date) < cur)
+      .reduce((a, p) => a + Number(p.amount), 0), 0)
   return before(incomes) - before(expenses) - fixedPaidBefore
 }
 
@@ -173,8 +181,14 @@ export function monthCarryover(incomes, expenses, fixedCosts, ref = todayISO()) 
 export function fixedDueThisMonth(fixedCosts, ref = todayISO()) {
   const cur = monthKey(ref)
   return (fixedCosts || [])
-    .filter((fc) => fc.active !== false && ((fc.paid_months || []).includes(cur) || isFixedOpenThisMonth(fc, ref)))
-    .reduce((s, fc) => s + Number(fc.amount), 0)
+    .filter((fc) => fc.active !== false)
+    .reduce((s, fc) => {
+      // Already debited this month: count what was actually taken (a weekly cost
+      // contributes every occurrence). Otherwise fall back to the planned amount.
+      const paid = (fc.payments || []).filter((p) => monthKey(p.date) === cur)
+      if (paid.length) return s + paid.reduce((a, p) => a + Number(p.amount), 0)
+      return isFixedOpenThisMonth(fc, ref) ? s + Number(fc.amount) : s
+    }, 0)
 }
 
 /**

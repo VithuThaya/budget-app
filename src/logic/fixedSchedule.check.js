@@ -1,0 +1,57 @@
+// Self-check for fixedSchedule.js — run with: node src/logic/fixedSchedule.check.js
+// No test framework on purpose: this is the one runnable check that fails if the
+// standing-order logic breaks (money path, so it does not go untested).
+import assert from 'node:assert/strict'
+import { shiftToBusinessDay, dueDatesUpTo, pendingFixedPayments, nextDueDate } from './fixedSchedule.js'
+
+const fc = (over = {}) => ({
+  id: 'x', amount: 1450, period: 'monthly', due_day: 1,
+  active: true, created_at: '2026-01-15', payments: [], ...over,
+})
+
+// --- weekend shift ---------------------------------------------------------
+// 2026-08-01 is a Saturday -> Friday 31 July. 2026-11-01 is a Sunday -> Fri 30 Oct.
+assert.equal(shiftToBusinessDay('2026-08-01'), '2026-07-31', 'Saturday shifts back to Friday')
+assert.equal(shiftToBusinessDay('2026-11-01'), '2026-10-30', 'Sunday shifts back to Friday')
+assert.equal(shiftToBusinessDay('2026-07-01'), '2026-07-01', 'Wednesday is untouched')
+
+// --- day clamped to month length ------------------------------------------
+// Due on the 31st: February must clamp to the 28th (2026 is not a leap year).
+const feb = dueDatesUpTo(fc({ due_day: 31, created_at: '2026-01-31', payments: [{ date: '2026-01-30', amount: 100 }] }), '2026-03-05')
+assert.ok(feb.includes('2026-02-27'), `31st clamps into February (Sat 28th -> Fri 27th), got ${JSON.stringify(feb)}`)
+
+// --- idempotency: booking twice adds nothing -------------------------------
+const once = pendingFixedPayments([fc({ created_at: '2026-06-15' })], '2026-07-20')
+assert.equal(once.length, 1, 'first run books the July occurrence')
+assert.deepEqual(once[0].payments.map((p) => p.date), ['2026-07-01'], 'exactly one occurrence booked')
+const twice = pendingFixedPayments([fc({ created_at: '2026-06-15', payments: once[0].payments })], '2026-07-20')
+assert.equal(twice.length, 0, 'second run books nothing — generation is idempotent')
+
+// --- amount is frozen at booking time --------------------------------------
+// Raising the amount afterwards must not rewrite the recorded payment.
+assert.equal(once[0].payments[0].amount, 1450, 'payment records the amount that applied then')
+const afterRaise = pendingFixedPayments([fc({ amount: 1500, created_at: '2026-06-15', payments: once[0].payments })], '2026-07-20')
+assert.equal(afterRaise.length, 0, 'a price change does not re-book past months')
+
+// --- quarterly recurs every 3 months, not monthly --------------------------
+const q = dueDatesUpTo(fc({ period: 'quarterly', due_day: 15, created_at: '2026-01-10', payments: [{ date: '2026-01-15', amount: 300 }] }), '2026-08-01')
+assert.deepEqual(q, ['2026-04-15', '2026-07-15'], `quarterly steps 3 months, got ${JSON.stringify(q)}`)
+
+// --- weekly records every occurrence, not one per month --------------------
+// This is the bug the old paid_months model had: weekly costs counted once a month.
+const w = dueDatesUpTo(fc({ period: 'weekly', amount: 50, due_day: 6, created_at: '2026-07-01', payments: [{ date: '2026-07-06', amount: 50 }] }), '2026-07-31')
+assert.ok(w.length >= 3, `weekly books every 7 days (got ${w.length}: ${JSON.stringify(w)})`)
+
+// --- backfill guard: an old cost does not post years of history ------------
+const old = dueDatesUpTo(fc({ created_at: '2015-01-01' }), '2026-07-20')
+assert.ok(old.length <= 13, `backfill is capped at ~12 months, got ${old.length}`)
+
+// --- no due_day / inactive stay manual -------------------------------------
+assert.deepEqual(dueDatesUpTo(fc({ due_day: null }), '2026-07-20'), [], 'no due_day = manual')
+assert.deepEqual(dueDatesUpTo(fc({ active: false }), '2026-07-20'), [], 'paused costs never book')
+
+// --- next due date is in the future ----------------------------------------
+const next = nextDueDate(fc({ due_day: 25, payments: [{ date: '2026-07-25', amount: 380 }] }), '2026-07-26')
+assert.ok(next > '2026-07-26', `next due date is ahead of today, got ${next}`)
+
+console.log('fixedSchedule: all checks passed')

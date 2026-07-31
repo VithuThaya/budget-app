@@ -70,13 +70,22 @@ create table if not exists public.expenses (
 -- spend. They are NOT expenses and are never double-counted against the
 -- expenses table. Each row's `amount` is normalised to a monthly value in the
 -- app via its `period`.
+--
+-- `payments` records what was ACTUALLY debited: one entry per occurrence with
+-- the amount that applied at the time. That freezes history — editing `amount`
+-- (a rent increase) never rewrites past months — and lets weekly costs record
+-- every occurrence instead of one per month. `due_day` drives the automatic
+-- booking; standing orders land on the previous working day when the day falls
+-- on a weekend. A row without `due_day` stays manual.
 create table if not exists public.fixed_costs (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
   name        text not null,
   amount      numeric(12, 2) not null default 0,
   period      text not null default 'monthly',  -- 'weekly' | 'monthly' | 'quarterly' | 'yearly'
-  paid_months text[] not null default '{}',      -- months ('YYYY-MM') the user ticked as paid; drives Kontostand & month-end projection
+  due_day     int,                               -- 1..31, null = book manually
+  payments    jsonb not null default '[]',       -- [{ date: 'YYYY-MM-DD', amount: 1450.00, auto: true }]
+  paid_months text[] not null default '{}',      -- DEPRECATED, superseded by `payments`; kept as a safety net
   active      boolean not null default true,
   notes       text,
   created_at  timestamptz not null default now()
@@ -114,6 +123,28 @@ create index if not exists contributions_user_goal_idx on public.savings_contrib
 
 create index if not exists expenses_user_date_idx on public.expenses (user_id, date desc);
 create index if not exists incomes_user_date_idx  on public.incomes (user_id, date desc);
+
+-- ---------------------------------------------------------------------------
+-- Migrations for databases created before a column existed.
+-- `create table if not exists` above does NOT add columns to an existing table,
+-- so every column added after the first release needs an explicit alter here.
+-- All statements are idempotent — re-running this whole file is always safe.
+-- ---------------------------------------------------------------------------
+alter table public.fixed_costs     add column if not exists due_day int;
+alter table public.fixed_costs     add column if not exists payments jsonb not null default '[]';
+alter table public.budget_settings add column if not exists fixed_check_month text;  -- 'YYYY-MM' the user confirmed
+
+-- One-off backfill: turn the old paid_months ('YYYY-MM' list) into payment
+-- entries. The exact debit day is unknown for historic months, so the first of
+-- the month is used; the amount is today's amount (the only one on record).
+-- Guarded by `payments = '[]'` so it never runs twice or overwrites real data.
+update public.fixed_costs f
+set payments = (
+  select coalesce(jsonb_agg(jsonb_build_object('date', m || '-01', 'amount', f.amount, 'auto', false) order by m), '[]'::jsonb)
+  from unnest(f.paid_months) as m
+)
+where f.payments = '[]'::jsonb
+  and coalesce(array_length(f.paid_months, 1), 0) > 0;
 
 -- ---------------------------------------------------------------------------
 -- Row Level Security: each user can only touch their own rows

@@ -4,6 +4,7 @@ import {
 import { supabase, isConfigured } from '../lib/supabase'
 import { DEFAULT_CATEGORIES } from '../lib/categoryMeta'
 import { pendingIncomeInserts } from '../logic/recurring'
+import { pendingFixedPayments } from '../logic/fixedSchedule'
 import { todayISO } from '../lib/dates'
 
 // ---------------------------------------------------------------------------
@@ -33,6 +34,7 @@ export function DataProvider({ session, children }) {
   const [error, setError] = useState(null)
   const seededRef = useRef(false)
   const recurredForRef = useRef(null)
+  const fixedBookedForRef = useRef(null)
   const loadGenRef = useRef(0)
 
   const setters = useMemo(
@@ -207,6 +209,22 @@ export function DataProvider({ session, children }) {
   const addFixedCost = useCallback((v) => create('fixed_costs', v), [create])
   const updateFixedCost = useCallback((id, v) => update('fixed_costs', id, v), [update])
   const deleteFixedCost = useCallback((id) => remove('fixed_costs', id), [remove])
+
+  // Book standing-order fixed costs once per login, mirroring the recurring-income
+  // effect above: any occurrence that came due while the app was closed is written
+  // into `payments`. Idempotent — pendingFixedPayments skips dates already recorded,
+  // and costs without a due_day are left for the user to tick by hand.
+  useEffect(() => {
+    if (loading || !userId || fixedBookedForRef.current === userId) return
+    fixedBookedForRef.current = userId
+    const updates = pendingFixedPayments(fixedCosts, todayISO())
+    if (!updates.length) return
+    ;(async () => {
+      for (const u of updates) {
+        try { await updateFixedCost(u.id, { payments: u.payments }) } catch { /* skip one, keep going */ }
+      }
+    })()
+  }, [loading, userId, fixedCosts, updateFixedCost])
 
   const addSavingsGoal = useCallback((v) => create('savings_goals', v), [create])
   const updateSavingsGoal = useCallback((id, v) => update('savings_goals', id, v), [update])

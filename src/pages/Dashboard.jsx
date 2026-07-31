@@ -9,6 +9,7 @@ import { iconFor } from '../lib/categoryMeta'
 import {
   monthSpend, weekSpend, monthIncome, spendByCategory, monthlyFixedTotal, accountBalance,
   fixedPaidTotal, monthCarryover, fixedDueThisMonth, leftToSpendThisMonth,
+  projectedMonthEndBalance, fixedOpenThisMonth, isFixedOpenThisMonth,
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
@@ -40,6 +41,12 @@ export default function Dashboard() {
   )
   const fixedBilled = useMemo(() => fixedPaidTotal(fixedCosts), [fixedCosts])
   const balance = useMemo(() => accountBalance(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
+  // Month-end view: today's balance minus the fixed costs still to be debited.
+  // Both numbers converge on the last day of the month — if they don't, something
+  // was missed. That is the built-in cross-check.
+  const projected = useMemo(() => projectedMonthEndBalance(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
+  const fixedStillOpen = useMemo(() => fixedOpenThisMonth(fixedCosts), [fixedCosts])
+  const openCount = useMemo(() => (fixedCosts || []).filter((fc) => isFixedOpenThisMonth(fc)).length, [fixedCosts])
   const totalIncome = useMemo(() => incomes.reduce((a, i) => a + Number(i.amount), 0), [incomes])
   const totalSpent = useMemo(() => expenses.reduce((a, e) => a + Number(e.amount), 0), [expenses])
 
@@ -88,18 +95,47 @@ export default function Dashboard() {
             {balance >= 0 ? 'im Plus' : 'im Minus'}
           </span>
         </div>
-        <div className={`mt-1.5 truncate text-3xl font-bold tracking-tight sm:text-4xl ${balance >= 0 ? 'text-green-400' : 'text-red-300'}`}>
+        <p className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Jetzt auf dem Konto</p>
+        <div className={`mt-0.5 truncate text-3xl font-bold tracking-tight sm:text-4xl ${balance >= 0 ? 'text-green-400' : 'text-red-300'}`}>
           <Money value={balance} />
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
           <span className="whitespace-nowrap">Einnahmen <Money value={totalIncome} className="tabular-nums text-green-400" /></span>
           <span className="whitespace-nowrap">− Ausgaben <Money value={totalSpent} className="tabular-nums text-zinc-300" /></span>
           <Link to="/fixed-costs" className="whitespace-nowrap hover:text-accent-soft hover:underline cursor-pointer">
             − Fixkosten <Money value={fixedBilled} className="tabular-nums text-zinc-300" />
           </Link>
         </div>
-        <p className="mt-2 text-xs text-zinc-500">
-          Einnahmen − Ausgaben − bereits fällige Fixkosten, fortlaufend — wie dein echtes Bankkonto. Wird in den nächsten Monat übertragen.
+
+        {/* Month-end projection. Converges with the live balance once every fixed
+            cost is debited — a mismatch on the 31st means something was missed. */}
+        <div className="mt-4 border-t border-ink-700 pt-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Ende {formatMonthLabel()} erwartet
+            </p>
+            {fixedStillOpen > 0 && (
+              <span className="text-xs text-amber-300">
+                − <Money value={fixedStillOpen} className="tabular-nums" /> offen
+              </span>
+            )}
+          </div>
+          <div className={`mt-0.5 truncate text-2xl font-semibold tracking-tight ${projected >= 0 ? 'text-green-400' : 'text-red-300'}`}>
+            <Money value={projected} />
+          </div>
+          {openCount > 0 ? (
+            <Link to="/fixed-costs" className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
+              {openCount === 1 ? '1 Fixkosten-Abbuchung kommt noch' : `${openCount} Fixkosten-Abbuchungen kommen noch`}
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          ) : (
+            <p className="mt-1.5 text-xs text-green-300">Alle Fixkosten diesen Monat abgebucht.</p>
+          )}
+        </div>
+
+        <p className="mt-3 text-xs text-zinc-500">
+          Oben: Einnahmen − Ausgaben − bereits abgebuchte Fixkosten, fortlaufend wie dein Bankkonto.
+          Unten: was Ende Monat übrig ist, wenn keine weiteren Ausgaben dazukommen. Am Monatsende sind beide Zahlen gleich.
         </p>
       </section>
 
