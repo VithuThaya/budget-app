@@ -101,19 +101,26 @@ function MobileDock({ onNavigate, onSignOut }) {
       )}
 
       {/* Fluid menu — expands upward from the center button */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex flex-col-reverse items-center gap-2.5 px-4">
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex flex-col-reverse items-center gap-2.5 px-4"
+        aria-hidden={!open}
+      >
         {fluidItems.map((item, i) => {
           const Icon = item.icon
+          // No pointer-events here: the items stay mounted while closed (so they
+          // can animate) and would otherwise keep catching taps through their
+          // opacity-0 state — an invisible stack of "Sparen"/"Abmelden" sitting
+          // above the + button. Enabled per item in `anim` only while open.
           const base =
-            'pointer-events-auto flex items-center gap-3 rounded-full border py-2.5 pl-2.5 pr-4 shadow-card backdrop-blur-xl transition-all duration-300 will-change-transform'
+            'flex items-center gap-3 rounded-full border py-2.5 pl-2.5 pr-4 shadow-card backdrop-blur-xl transition-all duration-300 will-change-transform'
           const tone = item.accent
             ? 'border-accent/40 bg-accent text-white'
             : item.danger
               ? 'border-ink-700 bg-ink-800/90 text-zinc-300'
               : 'border-ink-700 bg-ink-800/90 text-zinc-100'
           const anim = open
-            ? 'translate-y-0 opacity-100 scale-100'
-            : 'translate-y-4 opacity-0 scale-95'
+            ? 'pointer-events-auto translate-y-0 opacity-100 scale-100'
+            : 'pointer-events-none translate-y-4 opacity-0 scale-95'
           const iconWrap = item.accent
             ? 'bg-white/20 text-white'
             : item.danger
