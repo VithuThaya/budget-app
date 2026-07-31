@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "if": "Bash(git commit *)",
+            "prompt": "The user just committed to git. Update the knowledge graph by running /graphify to ensure it reflects the latest code changes.",
+            "timeout": 60,
+            "statusMessage": "Updating knowledge graph..."
+          }
+        ]
+      }
+    ]
+  }
+}
