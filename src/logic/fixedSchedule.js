@@ -41,6 +41,18 @@ function dueDateInMonth(from, offset, dueDay) {
   return toISODate(new Date(y, m, Math.min(dueDay, daysInMonth)))
 }
 
+/** The debit date this cost is scheduled for in `monthKey` ('YYYY-MM'), weekend
+ *  shift applied. Null when the cost has no due day. Lets callers ask "was this
+ *  month's instalment ever this cost's obligation?" without replaying the
+ *  whole schedule. */
+export function scheduledDateFor(fc, monthKey) {
+  if (!fc?.due_day) return null
+  const [y, m] = String(monthKey).split('-').map(Number)
+  if (!y || !m) return null
+  const daysInMonth = new Date(y, m, 0).getDate()
+  return shiftToBusinessDay(toISODate(new Date(y, m - 1, Math.min(fc.due_day, daysInMonth))))
+}
+
 /** All occurrence dates for `fc` that are due on or before `todayISO` and are
  *  not already recorded in its `payments`. Returned as shifted ISO strings. */
 export function dueDatesUpTo(fc, todayISO) {

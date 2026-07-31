@@ -2,7 +2,7 @@
 // No test framework on purpose: this is the one runnable check that fails if the
 // standing-order logic breaks (money path, so it does not go untested).
 import assert from 'node:assert/strict'
-import { shiftToBusinessDay, dueDatesUpTo, pendingFixedPayments, nextDueDate } from './fixedSchedule.js'
+import { shiftToBusinessDay, dueDatesUpTo, pendingFixedPayments, nextDueDate, scheduledDateFor } from './fixedSchedule.js'
 
 const fc = (over = {}) => ({
   id: 'x', amount: 1450, period: 'monthly', due_day: 1,
@@ -62,5 +62,13 @@ const aug = pendingFixedPayments([fc({ due_day: 1, payments: [{ date: '2026-07-0
 const augPay = aug[0].payments.at(-1)
 assert.equal(augPay.date, '2026-07-31', 'Saturday due date debits on the Friday before')
 assert.equal(augPay.for, '2026-08', 'but the instalment still belongs to August')
+
+// --- a cost that starts next month is not open this month ------------------
+// Real case: a standing order created 30 Jul with due day 25. July's instalment
+// (Sat 25th -> Fri 24th) predates it, so July was never owed — it must not be
+// subtracted from the month-end projection.
+assert.equal(scheduledDateFor(fc({ due_day: 25 }), '2026-07'), '2026-07-24', '25 Jul 2026 is a Saturday -> Friday 24th')
+assert.equal(scheduledDateFor(fc({ due_day: 25 }), '2026-08'), '2026-08-25', 'August 25th is a Tuesday')
+assert.equal(scheduledDateFor(fc({ due_day: null }), '2026-08'), null, 'no due day, no schedule')
 
 console.log('fixedSchedule: all checks passed')

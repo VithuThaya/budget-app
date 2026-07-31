@@ -1,7 +1,8 @@
 // Shared derivations used by pages and the intelligence modules.
 // Keeping these pure + centralised guarantees Dashboard, Budgets and Reports
 // all compute the same numbers from the same source arrays.
-import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO, todayISO } from '../lib/dates'
+import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO, todayISO } from '../lib/dates.js'
+import { scheduledDateFor } from './fixedSchedule.js'
 
 /** Total spent in the month of `ref` (default: current month). */
 export function monthSpend(expenses, ref) {
@@ -138,6 +139,11 @@ export function isFixedOpenThisMonth(fc, refISO = todayISO()) {
   const cur = monthKey(refISO)
   const payments = fc.payments || []
   if (payments.some((p) => instalmentMonth(p) === cur)) return false
+  // Not yet in service: this month's instalment fell due before the cost was
+  // created, so it was never owed. Without this a standing order that starts
+  // next month shows as open and is subtracted from the month-end projection.
+  const scheduled = scheduledDateFor(fc, cur)
+  if (scheduled && fc.created_at && scheduled < String(fc.created_at).slice(0, 10)) return false
   if (fc.period === 'weekly' || fc.period === 'monthly') return true
   // Non-monthly: due again once `step` months have passed since the last payment.
   const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
