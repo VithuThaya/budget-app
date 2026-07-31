@@ -18,7 +18,7 @@ assert.equal(shiftToBusinessDay('2026-07-01'), '2026-07-01', 'Wednesday is untou
 // --- day clamped to month length ------------------------------------------
 // Due on the 31st: February must clamp to the 28th (2026 is not a leap year).
 const feb = dueDatesUpTo(fc({ due_day: 31, created_at: '2026-01-31', payments: [{ date: '2026-01-30', amount: 100 }] }), '2026-03-05')
-assert.ok(feb.includes('2026-02-27'), `31st clamps into February (Sat 28th -> Fri 27th), got ${JSON.stringify(feb)}`)
+assert.ok(feb.map((d) => d.date).includes('2026-02-27'), `31st clamps into February (Sat 28th -> Fri 27th), got ${JSON.stringify(feb)}`)
 
 // --- idempotency: booking twice adds nothing -------------------------------
 const once = pendingFixedPayments([fc({ created_at: '2026-06-15' })], '2026-07-20')
@@ -35,7 +35,7 @@ assert.equal(afterRaise.length, 0, 'a price change does not re-book past months'
 
 // --- quarterly recurs every 3 months, not monthly --------------------------
 const q = dueDatesUpTo(fc({ period: 'quarterly', due_day: 15, created_at: '2026-01-10', payments: [{ date: '2026-01-15', amount: 300 }] }), '2026-08-01')
-assert.deepEqual(q, ['2026-04-15', '2026-07-15'], `quarterly steps 3 months, got ${JSON.stringify(q)}`)
+assert.deepEqual(q.map((d) => d.date), ['2026-04-15', '2026-07-15'], `quarterly steps 3 months, got ${JSON.stringify(q)}`)
 
 // --- weekly records every occurrence, not one per month --------------------
 // This is the bug the old paid_months model had: weekly costs counted once a month.
@@ -53,5 +53,14 @@ assert.deepEqual(dueDatesUpTo(fc({ active: false }), '2026-07-20'), [], 'paused 
 // --- next due date is in the future ----------------------------------------
 const next = nextDueDate(fc({ due_day: 25, payments: [{ date: '2026-07-25', amount: 380 }] }), '2026-07-26')
 assert.ok(next > '2026-07-26', `next due date is ahead of today, got ${next}`)
+
+// --- instalment month vs debit month ---------------------------------------
+// 1 Aug 2026 is a Saturday, so the August instalment is debited on Fri 31 July.
+// The payment must carry for='2026-08' — keying off the debit date would leave
+// August looking unpaid and subtract it from the month-end projection twice.
+const aug = pendingFixedPayments([fc({ due_day: 1, payments: [{ date: '2026-07-01', for: '2026-07', amount: 1450 }] })], '2026-08-05')
+const augPay = aug[0].payments.at(-1)
+assert.equal(augPay.date, '2026-07-31', 'Saturday due date debits on the Friday before')
+assert.equal(augPay.for, '2026-08', 'but the instalment still belongs to August')
 
 console.log('fixedSchedule: all checks passed')

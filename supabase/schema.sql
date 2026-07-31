@@ -84,7 +84,11 @@ create table if not exists public.fixed_costs (
   amount      numeric(12, 2) not null default 0,
   period      text not null default 'monthly',  -- 'weekly' | 'monthly' | 'quarterly' | 'yearly'
   due_day     int,                               -- 1..31, null = book manually
-  payments    jsonb not null default '[]',       -- [{ date: 'YYYY-MM-DD', amount: 1450.00, auto: true }]
+  payments    jsonb not null default '[]',       -- [{ date: 'YYYY-MM-DD', for: 'YYYY-MM', amount: 1450.00, auto: true }]
+                                                 -- `date` = when it was debited (drives Kontostand),
+                                                 -- `for`  = the month the instalment belongs to (drives open/paid).
+                                                 -- They differ when a due day falls on a weekend: 1 Aug 2026
+                                                 -- (a Saturday) is debited on Fri 31 Jul but is the August instalment.
   paid_months text[] not null default '{}',      -- DEPRECATED, superseded by `payments`; kept as a safety net
   active      boolean not null default true,
   notes       text,

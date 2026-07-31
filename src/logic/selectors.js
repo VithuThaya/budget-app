@@ -116,6 +116,14 @@ function monthsBetweenKeys(a, b) {
  * additionally subtracts what is still open this month.
  */
 
+/**
+ * The month an instalment BELONGS to, which is not always the month it was
+ * debited in: a due day of 1 August (a Saturday) is debited on 31 July, and
+ * without this the August instalment would still count as open. `for` is set
+ * when the payment is booked; older rows fall back to the debit month.
+ */
+const instalmentMonth = (p) => p.for || monthKey(p.date)
+
 /** Total fixed-cost money actually debited to date. */
 export function fixedPaidTotal(fixedCosts) {
   return (fixedCosts || []).reduce(
@@ -129,11 +137,11 @@ export function isFixedOpenThisMonth(fc, refISO = todayISO()) {
   if (fc.active === false) return false
   const cur = monthKey(refISO)
   const payments = fc.payments || []
-  if (payments.some((p) => monthKey(p.date) === cur)) return false
+  if (payments.some((p) => instalmentMonth(p) === cur)) return false
   if (fc.period === 'weekly' || fc.period === 'monthly') return true
   // Non-monthly: due again once `step` months have passed since the last payment.
   const step = PERIOD_STEP_MONTHS[fc.period] ?? 1
-  const last = payments.length ? payments.map((p) => monthKey(p.date)).sort().at(-1) : null
+  const last = payments.length ? payments.map(instalmentMonth).sort().at(-1) : null
   return last ? monthsBetweenKeys(last, cur) >= step : true
 }
 
@@ -185,7 +193,7 @@ export function fixedDueThisMonth(fixedCosts, ref = todayISO()) {
     .reduce((s, fc) => {
       // Already debited this month: count what was actually taken (a weekly cost
       // contributes every occurrence). Otherwise fall back to the planned amount.
-      const paid = (fc.payments || []).filter((p) => monthKey(p.date) === cur)
+      const paid = (fc.payments || []).filter((p) => instalmentMonth(p) === cur)
       if (paid.length) return s + paid.reduce((a, p) => a + Number(p.amount), 0)
       return isFixedOpenThisMonth(fc, ref) ? s + Number(fc.amount) : s
     }, 0)

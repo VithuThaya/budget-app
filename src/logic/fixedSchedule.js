@@ -69,8 +69,9 @@ export function dueDatesUpTo(fc, todayISO) {
     while (toISODate(d) < anchor && guard++ < 1000) d = addDays(d, 7)
     guard = 0
     while (toISODate(d) <= todayISO && guard++ < 1000) {
-      const shifted = shiftToBusinessDay(toISODate(d))
-      if (shifted > anchor && !booked.has(shifted)) dates.push(shifted)
+      const nominal = toISODate(d)
+      const shifted = shiftToBusinessDay(nominal)
+      if (shifted > anchor && !booked.has(shifted)) dates.push({ date: shifted, for: nominal.slice(0, 7) })
       d = addDays(d, 7)
     }
     return dates
@@ -82,7 +83,10 @@ export function dueDatesUpTo(fc, todayISO) {
     if (nominal > todayISO) break
     const shifted = shiftToBusinessDay(nominal)
     // `> anchor` (not >=) so the anchor's own payment is never re-booked.
-    if (shifted > anchor && !booked.has(shifted)) dates.push(shifted)
+    // `for` is the month the instalment BELONGS to, which is not always the
+    // month it is debited in: a due day of 1 Aug (a Saturday) debits on 31 Jul.
+    // Balance maths uses `date`, open/paid state uses `for`.
+    if (shifted > anchor && !booked.has(shifted)) dates.push({ date: shifted, for: nominal.slice(0, 7) })
   }
   return dates
 }
@@ -95,7 +99,7 @@ export function pendingFixedPayments(fixedCosts, todayISO) {
   for (const fc of fixedCosts || []) {
     const dates = dueDatesUpTo(fc, todayISO)
     if (!dates.length) continue
-    const added = dates.map((date) => ({ date, amount: Number(fc.amount), auto: true }))
+    const added = dates.map((d) => ({ date: d.date, for: d.for, amount: Number(fc.amount), auto: true }))
     out.push({ id: fc.id, payments: [...(fc.payments || []), ...added] })
   }
   return out
