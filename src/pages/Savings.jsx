@@ -17,7 +17,7 @@ import {
 } from '../logic/savings'
 import { leftToSpendThisMonth } from '../logic/selectors'
 
-const blankGoal = { name: '', icon: 'PiggyBank', color: '#22c55e', target_amount: '', target_date: '', monthly_target: '' }
+const blankGoal = { name: '', icon: 'PiggyBank', color: '#34D399', target_amount: '', target_date: '', monthly_target: '' }
 
 export default function Savings() {
   const {
@@ -44,7 +44,7 @@ export default function Savings() {
     setDraft({
       name: goal.name,
       icon: goal.icon || 'PiggyBank',
-      color: goal.color || '#22c55e',
+      color: goal.color || '#34D399',
       target_amount: goal.target_amount != null ? String(goal.target_amount) : '',
       target_date: goal.target_date || '',
       monthly_target: goal.monthly_target != null ? String(goal.monthly_target) : '',
@@ -97,7 +97,7 @@ export default function Savings() {
         <span className="stat-label flex items-center gap-1.5">
           <Wallet className="h-4 w-4" /> Verfügbar zum Sparen diesen Monat
         </span>
-        <div className={`mt-1.5 truncate text-2xl font-bold sm:text-3xl ${availableToSave > 0 ? 'text-green-400' : 'text-red-300'}`}>
+        <div className={`mt-1.5 truncate text-2xl font-bold sm:text-3xl ${availableToSave > 0 ? 'text-good' : 'text-coral'}`}>
           <Money value={availableToSave} />
         </div>
         <p className="mt-1.5 text-xs text-zinc-500">
@@ -112,16 +112,16 @@ export default function Savings() {
         <div className="grid grid-cols-2 gap-3 lg:col-span-1 lg:grid-cols-1 lg:gap-4">
           <div className="card p-4">
             <span className="stat-label">Gesamt gespart</span>
-            <div className="mt-1.5 truncate text-xl font-semibold text-green-400 sm:text-2xl"><Money value={saved} /></div>
+            <div className="mt-1.5 truncate text-xl font-semibold text-good sm:text-2xl"><Money value={saved} /></div>
           </div>
           <div className="card p-4">
             <span className="stat-label">Diesen Monat gespart</span>
-            <div className="mt-1.5 truncate text-xl font-semibold text-zinc-100 sm:text-2xl"><Money value={savedMonth} /></div>
+            <div className="mt-1.5 truncate text-xl font-semibold text-silver sm:text-2xl"><Money value={savedMonth} /></div>
           </div>
         </div>
         {pie.length > 0 && (
           <section className="card p-5 lg:col-span-2">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
               <PiggyBank className="h-[18px] w-[18px] text-accent-soft" /> So verteilt sich dein Sparen
             </h2>
             <PieBreakdown data={pie} />
@@ -205,7 +205,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-zinc-100">{goal.name}</p>
+          <p className="truncate font-medium text-silver">{goal.name}</p>
           <p className="mt-0.5 text-xs text-zinc-500">
             {p.hasTarget
               ? <>{formatCHF(p.balance)} <span className="text-zinc-600">von</span> {formatCHF(p.target)}</>
@@ -214,11 +214,11 @@ function GoalCard({ goal, onEdit, onDelete }) {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button onClick={onEdit} aria-label={`${goal.name} bearbeiten`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700 hover:text-zinc-100 cursor-pointer">
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700/60 hover:text-silver cursor-pointer">
             <Pencil className="h-4 w-4" />
           </button>
           <button onClick={onDelete} aria-label={`${goal.name} löschen`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-coral cursor-pointer">
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
@@ -228,7 +228,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
       {p.hasTarget && (
         <div className="mt-4">
           <div className="mb-1.5 flex items-center justify-between text-xs">
-            <span className={p.done ? 'font-medium text-green-300' : 'text-zinc-400'}>
+            <span className={p.done ? 'font-medium text-good' : 'text-zinc-400'}>
               {p.done ? '🎉 Ziel erreicht!' : `noch ${formatCHF(p.remaining)}`}
             </span>
             <span className="tabular-nums text-zinc-400">{Math.round(p.pct * 100)}%</span>
@@ -256,19 +256,19 @@ function GoalCard({ goal, onEdit, onDelete }) {
 
       {/* Monthly plan progress */}
       {p.monthlyTarget != null && p.monthlyTarget > 0 && (
-        <div className="mt-3 rounded-xl border border-ink-700 bg-ink-900/50 p-3">
+        <div className="mt-3 rounded-xl border border-white/10 bg-ink-900/40 p-3 backdrop-blur-md">
           <div className="mb-1.5 flex items-center justify-between text-xs">
             <span className="text-zinc-400">Plan diesen Monat</span>
             <span className="tabular-nums text-zinc-300">{formatCHF(p.savedThisMonth)} / {formatCHF(p.monthlyTarget)}</span>
           </div>
-          <ProgressBar ratio={p.monthlyPct} color="#22c55e" />
+          <ProgressBar ratio={p.monthlyPct} color="#34D399" />
         </div>
       )}
 
       {/* Contribute */}
       <div className="mt-4">
         {adding ? (
-          <form onSubmit={handleAdd} className="space-y-3 rounded-xl border border-ink-700 bg-ink-900/50 p-3">
+          <form onSubmit={handleAdd} className="space-y-3 rounded-xl border border-white/10 bg-ink-900/40 p-3 backdrop-blur-md">
             <div className="grid grid-cols-2 gap-2">
               <input inputMode="decimal" autoFocus className="input" placeholder="Betrag (CHF)"
                 value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -276,7 +276,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
                 onChange={(e) => setDate(e.target.value)} />
             </div>
             <input className="input" placeholder="Notiz (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-            {error && <p className="text-xs text-red-300">{error}</p>}
+            {error && <p className="text-xs text-coral">{error}</p>}
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => { setAdding(false); setError(null) }} className="btn-ghost">Abbrechen</button>
               <button type="submit" disabled={busy} className="btn-primary">
@@ -286,7 +286,7 @@ function GoalCard({ goal, onEdit, onDelete }) {
           </form>
         ) : (
           <button onClick={() => setAdding(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink-700 py-2.5 text-sm font-medium text-zinc-300 transition-colors duration-200 hover:border-accent hover:text-accent-soft cursor-pointer">
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 py-2.5 text-sm font-medium text-zinc-300 transition-colors duration-200 hover:border-accent hover:text-accent-soft cursor-pointer">
             <Wallet className="h-4 w-4" /> Einzahlen
           </button>
         )}
@@ -294,16 +294,16 @@ function GoalCard({ goal, onEdit, onDelete }) {
 
       {/* Contribution history */}
       {contributions.length > 0 && (
-        <div className="mt-4 border-t border-ink-800 pt-3">
+        <div className="mt-4 border-t border-white/10 pt-3">
           <div className="space-y-1.5">
             {shown.map((c) => (
               <div key={c.id} className="group flex items-center gap-2 text-sm">
                 <span className="text-zinc-500">{formatDate(c.date)}</span>
                 {c.notes && <span className="min-w-0 flex-1 truncate text-xs text-zinc-500">· {c.notes}</span>}
-                <span className={`tabular-nums text-green-400 ${c.notes ? '' : 'ml-auto'}`}>+<Money value={c.amount} /></span>
+                <span className={`tabular-nums text-good ${c.notes ? '' : 'ml-auto'}`}>+<Money value={c.amount} /></span>
                 <button onClick={() => window.confirm('Diese Einzahlung löschen?') && deleteContribution(c.id)}
                   aria-label="Einzahlung löschen"
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-500 opacity-0 transition-opacity duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer group-hover:opacity-100 focus:opacity-100">
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-500 opacity-0 transition-opacity duration-200 hover:bg-bad/15 hover:text-coral cursor-pointer group-hover:opacity-100 focus:opacity-100">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -364,7 +364,7 @@ function GoalEditor({ draft, setDraft, onSave, onCancel, busy, error }) {
               <button key={name} type="button" onClick={() => setDraft({ ...draft, icon: name })}
                 aria-label={name} aria-pressed={active}
                 className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors duration-200 cursor-pointer ${
-                  active ? 'border-accent bg-accent/15 text-accent' : 'border-ink-700 bg-ink-900 text-zinc-400 hover:text-zinc-200'
+                  active ? 'border-accent bg-accent/15 text-accent' : 'border-white/10 bg-ink-900/60 text-zinc-400 hover:text-zinc-200'
                 }`}>
                 <Icon className="h-[18px] w-[18px]" />
               </button>
@@ -387,7 +387,7 @@ function GoalEditor({ draft, setDraft, onSave, onCancel, busy, error }) {
         </div>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-3 text-sm text-coral">{error}</p>}
 
       <div className="mt-5 flex justify-end gap-2">
         <button onClick={onCancel} className="btn-ghost"><X className="h-4 w-4" /> Abbrechen</button>

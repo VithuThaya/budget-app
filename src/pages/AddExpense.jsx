@@ -183,7 +183,7 @@ export default function AddExpense() {
                 <button
                   key={cat.id} type="button" onClick={() => setCategoryId(cat.id)} aria-pressed={active}
                   className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs font-medium transition-colors duration-200 cursor-pointer ${
-                    active ? 'border-accent bg-accent/10 text-zinc-100' : 'border-ink-700 bg-ink-900 text-zinc-400 hover:text-zinc-200'
+                    active ? 'border-accent bg-accent/10 text-silver' : 'border-white/10 bg-ink-900/60 text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg"
@@ -212,7 +212,7 @@ export default function AddExpense() {
             onChange={(e) => setDate(e.target.value)} />
         </div>
 
-        {error && <p className="rounded-lg border border-bad/30 bg-bad/10 px-3 py-2 text-sm text-red-300">{error}</p>}
+        {error && <p className="rounded-lg border border-coral/30 bg-coral/10 px-3 py-2 text-sm text-coral backdrop-blur-md">{error}</p>}
 
         <div className="flex justify-end gap-2 pt-1">
           <Link to="/expenses" className="btn-ghost">Abbrechen</Link>

@@ -6,7 +6,7 @@ import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
 import { Tags } from 'lucide-react'
 
-const blank = { name: '', icon: 'Tag', color: '#2563eb' }
+const blank = { name: '', icon: 'Tag', color: '#9D50BB' }
 
 export default function Categories() {
   const { categories, expenses, budgets, addCategory, updateCategory, deleteCategory } = useData()
@@ -98,18 +98,18 @@ export default function Categories() {
                   <Icon className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-zinc-100">{cat.name}</p>
+                  <p className="truncate font-medium text-silver">{cat.name}</p>
                   <p className="text-xs text-zinc-500">
                     {count} {count === 1 ? 'Ausgabe' : 'Ausgaben'}{hasBudget ? ' • Budget' : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
                   <button onClick={() => startEdit(cat)} aria-label={`${cat.name} bearbeiten`}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700 hover:text-zinc-100 cursor-pointer">
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-ink-700/60 hover:text-silver cursor-pointer">
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button onClick={() => handleDelete(cat)} aria-label={`${cat.name} löschen`}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-bad/15 hover:text-coral cursor-pointer">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -151,7 +151,7 @@ function Editor({ draft, setDraft, onSave, onCancel, busy, error }) {
               <button key={name} type="button" onClick={() => setDraft({ ...draft, icon: name })}
                 aria-label={name} aria-pressed={active}
                 className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors duration-200 cursor-pointer ${
-                  active ? 'border-accent bg-accent/15 text-accent' : 'border-ink-700 bg-ink-900 text-zinc-400 hover:text-zinc-200'
+                  active ? 'border-accent bg-accent/15 text-accent' : 'border-white/10 bg-ink-900/60 text-zinc-400 hover:text-zinc-200'
                 }`}>
                 <Icon className="h-[18px] w-[18px]" />
               </button>
@@ -174,7 +174,7 @@ function Editor({ draft, setDraft, onSave, onCancel, busy, error }) {
         </div>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-3 text-sm text-coral">{error}</p>}
 
       <div className="mt-5 flex justify-end gap-2">
         <button onClick={onCancel} className="btn-ghost"><X className="h-4 w-4" /> Abbrechen</button>

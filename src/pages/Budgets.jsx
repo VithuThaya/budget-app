@@ -66,10 +66,10 @@ export default function Budgets() {
         {plannedIncome > 0 ? (
           <>
             <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-              <div className={`text-2xl font-semibold ${available < 0 ? 'text-red-300' : 'text-zinc-50'}`}>
+              <div className={`text-2xl font-semibold ${available < 0 ? 'text-bad' : 'text-silver'}`}>
                 <Money value={available} /> <span className="text-sm font-normal text-zinc-500">verfügbar</span>
               </div>
-              <span className={`chip ${allocRatio > 1 ? 'bg-bad/10 text-red-300' : allocRatio >= 0.999 ? 'bg-good/10 text-green-300' : 'bg-white/5 text-zinc-300'}`}>
+              <span className={`chip ${allocRatio > 1 ? 'bg-bad/15 text-bad' : allocRatio >= 0.999 ? 'bg-good/15 text-good' : 'bg-white/5 text-zinc-300'}`}>
                 {Math.round(allocRatio * 100)}% verplant
               </span>
             </div>
@@ -78,7 +78,7 @@ export default function Budgets() {
               <span className="text-zinc-400">Verteilt: <Money value={totals.budgeted} /></span>
               {toAllocate >= 0
                 ? <span className="text-zinc-300"><Money value={toAllocate} /> übrig</span>
-                : <span className="text-red-300"><Money value={-toAllocate} /> zu viel verteilt</span>}
+                : <span className="text-bad"><Money value={-toAllocate} /> zu viel verteilt</span>}
             </div>
           </>
         ) : (
@@ -93,11 +93,11 @@ export default function Budgets() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <span className="stat-label">Ausgegeben von Budget diesen Monat</span>
-            <div className="mt-1 text-2xl font-semibold text-zinc-50">
+            <div className="mt-1 text-2xl font-semibold text-silver">
               <Money value={totals.used} /> <span className="text-base font-normal text-zinc-500">/ <Money value={totals.budgeted} /></span>
             </div>
           </div>
-          <span className={`chip ${overallRatio >= 1 ? 'bg-bad/10 text-red-300' : overallRatio >= 0.85 ? 'bg-warn/10 text-amber-300' : 'bg-good/10 text-green-300'}`}>
+          <span className={`chip ${overallRatio >= 1 ? 'bg-bad/15 text-bad' : overallRatio >= 0.85 ? 'bg-warn/15 text-warn' : 'bg-good/15 text-good'}`}>
             {Math.round(overallRatio * 100)}% genutzt
           </span>
         </div>
@@ -180,12 +180,12 @@ function BudgetRow({ category, budget, spent, onSave }) {
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-zinc-100">{category.name}</p>
+          <p className="truncate font-medium text-silver">{category.name}</p>
           <p className="text-xs text-zinc-500">
             <Money value={spent} /> ausgegeben
             {budget > 0 && (
               <> • {remaining >= 0 ? <span className="text-zinc-400"><Money value={remaining} /> übrig</span>
-                : <span className="text-red-300"><Money value={-remaining} /> über</span>}</>
+                : <span className="text-bad"><Money value={-remaining} /> über</span>}</>
             )}
           </p>
         </div>
@@ -210,12 +210,12 @@ function BudgetRow({ category, budget, spent, onSave }) {
       {budget > 0 && (
         <div className="mt-3 flex items-center gap-3">
           <div className="flex-1"><ProgressBar ratio={ratio} /></div>
-          <span className={`shrink-0 text-xs tabular-nums ${ratio >= 1 ? 'text-red-300' : ratio >= 0.85 ? 'text-amber-300' : 'text-zinc-500'}`}>
+          <span className={`shrink-0 text-xs tabular-nums ${ratio >= 1 ? 'text-bad' : ratio >= 0.85 ? 'text-warn' : 'text-zinc-500'}`}>
             {Math.round(ratio * 100)}%
           </span>
         </div>
       )}
-      {saved && <p className="mt-2 text-xs text-green-400">Gespeichert</p>}
+      {saved && <p className="mt-2 text-xs text-good">Gespeichert</p>}
     </div>
   )
 }

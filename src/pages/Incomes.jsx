@@ -59,11 +59,11 @@ export default function Incomes() {
       <div className="mb-5 grid grid-cols-2 gap-3">
         <div className="card p-4">
           <span className="stat-label">Diesen Monat</span>
-          <div className="mt-1.5 truncate text-xl font-semibold text-green-400 sm:text-2xl"><Money value={thisMonth} /></div>
+          <div className="mt-1.5 truncate text-xl font-semibold text-good sm:text-2xl"><Money value={thisMonth} /></div>
         </div>
         <div className="card p-4">
           <span className="stat-label">Gesamt</span>
-          <div className="mt-1.5 truncate text-xl font-semibold text-zinc-100 sm:text-2xl"><Money value={total} /></div>
+          <div className="mt-1.5 truncate text-xl font-semibold text-silver sm:text-2xl"><Money value={total} /></div>
         </div>
       </div>
 
@@ -87,7 +87,7 @@ export default function Incomes() {
             </div>
             <div>
               <span className="label">Wiederkehrend</span>
-              <div className="flex rounded-xl border border-ink-700 bg-ink-900 p-1">
+              <div className="flex rounded-xl border border-white/10 bg-ink-900/60 p-1 backdrop-blur-md">
                 {RECUR.map((o) => (
                   <button key={o.value} type="button" onClick={() => setRecur(o.value)}
                     className={`flex-1 rounded-lg px-2 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
@@ -104,7 +104,7 @@ export default function Incomes() {
               )}
             </div>
           </div>
-          {error && <p className="text-sm text-red-300">{error}</p>}
+          {error && <p className="text-sm text-coral">{error}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setOpen(false)} className="btn-ghost">Abbrechen</button>
             <button type="submit" disabled={busy} className="btn-primary">
@@ -120,22 +120,22 @@ export default function Incomes() {
         <div className="space-y-2">
           {incomes.map((inc) => (
             <div key={inc.id}
-              className="group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-850/60 px-3.5 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-good/15 text-green-400">
+              className="group flex items-center gap-3 rounded-xl border border-white/5 bg-ink-850/50 px-3.5 py-3 backdrop-blur-md transition-all duration-200 hover:border-white/10 hover:bg-ink-800/60">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-good/15 text-good">
                 <TrendingUp className="h-5 w-5" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium text-zinc-100">{inc.source}</p>
+                  <p className="truncate text-sm font-medium text-silver">{inc.source}</p>
                   {inc.recurring && (
                     <span className="chip bg-accent/10 text-accent-soft"><Repeat className="h-3 w-3" />{inc.recur_interval}</span>
                   )}
                 </div>
                 <p className="mt-0.5 text-xs text-zinc-500">{formatDate(inc.date)}</p>
               </div>
-              <div className="shrink-0 text-sm font-semibold tabular-nums text-green-400">+<Money value={inc.amount} /></div>
+              <div className="shrink-0 text-sm font-semibold tabular-nums text-good">+<Money value={inc.amount} /></div>
               <button onClick={() => window.confirm('Diese Einnahme löschen?') && deleteIncome(inc.id)} aria-label="Einnahme löschen"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 transition-colors duration-200 hover:bg-bad/15 hover:text-red-300 cursor-pointer">
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 transition-colors duration-200 hover:bg-bad/15 hover:text-coral cursor-pointer">
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
