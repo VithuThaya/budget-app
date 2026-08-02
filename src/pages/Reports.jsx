@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toPng } from 'html-to-image'
 import {
   PieChart, LineChart, BarChart3, PiggyBank, CalendarRange, Sparkles,
@@ -113,6 +114,7 @@ function TabSwitcher({ tab, setTab }) {
 // Tab: Monat
 // ---------------------------------------------------------------------------
 function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts, savingsContributions, categoryMap }) {
+  const navigate = useNavigate()
   const monthLabel = formatMonthLabel(cursor)
 
   const pie = useMemo(() => categoryPieData(expenses, categoryMap, { monthOnly: true, ref: cursor }), [expenses, categoryMap, cursor])
@@ -162,7 +164,7 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
             <PieChart className="h-[18px] w-[18px] text-accent-soft" /> Ausgaben nach Kategorie
           </h2>
-          <PieBreakdown data={pie} />
+          <PieBreakdown data={pie} onSliceClick={(d) => d.categoryId && navigate(`/expenses?cat=${d.categoryId}`)} />
         </section>
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">

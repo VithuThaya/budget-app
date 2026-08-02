@@ -50,7 +50,7 @@ export default function SpendHeatmap({ year, dailyTotals }) {
                 <div
                   key={i}
                   title={`${formatDate(c.iso)}: ${formatCHF(c.amount)}`}
-                  className="rounded-[2px]"
+                  className="rounded-[3px]"
                   style={{ backgroundColor: cellColor(c.amount, max) }}
                 />
               ) : (
@@ -63,7 +63,7 @@ export default function SpendHeatmap({ year, dailyTotals }) {
       <div className="mt-2 flex items-center justify-end gap-1.5 text-[11px] text-zinc-500">
         <span>wenig</span>
         {[0, 0.25, 0.5, 0.75, 1].map((r) => (
-          <span key={r} className="h-2.5 w-2.5 rounded-[2px]" style={{ backgroundColor: cellColor(r * max, max || 1) }} />
+          <span key={r} className="h-2.5 w-2.5 rounded-[3px]" style={{ backgroundColor: cellColor(r * max, max || 1) }} />
         ))}
         <span>viel</span>
       </div>

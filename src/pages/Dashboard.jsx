@@ -214,10 +214,10 @@ export default function Dashboard() {
               actionTo="/budgets" actionLabel="Budgets festlegen" />
           ) : (
             <div className="space-y-4">
-              {budgetStatus.map(({ cat, budget, used, ratio }) => {
+              {budgetStatus.map(({ cat, budget, used, ratio }, i) => {
                 const Icon = iconFor(cat.icon)
                 return (
-                  <div key={cat.id}>
+                  <div key={cat.id} className="stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
                     <div className="mb-1.5 flex items-center justify-between gap-2 text-sm">
                       <span className="flex min-w-0 items-center gap-2 text-zinc-200">
                         <Icon className="h-4 w-4 shrink-0" style={{ color: cat.color }} /> <span className="truncate">{cat.name}</span>
@@ -246,16 +246,17 @@ export default function Dashboard() {
               actionTo="/expenses/add" actionLabel="Ausgabe hinzufügen" />
           ) : (
             <div className="space-y-2">
-              {recent.map((e) => (
-                <TransactionCard
-                  key={e.id}
-                  title={e.notes}
-                  amount={e.amount}
-                  date={e.date}
-                  category={categoryMap.get(e.category_id)}
-                  editTo={`/expenses/${e.id}/edit`}
-                  onDelete={() => window.confirm('Diese Ausgabe löschen?') && deleteExpense(e.id)}
-                />
+              {recent.map((e, i) => (
+                <div key={e.id} className="stagger-in" style={{ animationDelay: `${i * 40}ms` }}>
+                  <TransactionCard
+                    title={e.notes}
+                    amount={e.amount}
+                    date={e.date}
+                    category={categoryMap.get(e.category_id)}
+                    editTo={`/expenses/${e.id}/edit`}
+                    onDelete={() => window.confirm('Diese Ausgabe löschen?') && deleteExpense(e.id)}
+                  />
+                </div>
               ))}
             </div>
           )}

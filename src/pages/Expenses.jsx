@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Plus, Search, ReceiptText } from 'lucide-react'
 import { useData } from '../store/DataContext'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import TransactionCard from '../components/TransactionCard'
 import EmptyState from '../components/EmptyState'
@@ -18,8 +18,9 @@ const SORTS = {
 
 export default function Expenses() {
   const { expenses, categories, categoryMap, deleteExpense } = useData()
+  const [searchParams] = useSearchParams()
   const [query, setQuery] = useState('')
-  const [catFilter, setCatFilter] = useState('all')
+  const [catFilter, setCatFilter] = useState(() => searchParams.get('cat') || 'all')
   const [sort, setSort] = useState('date-desc')
 
   const filtered = useMemo(() => {
@@ -98,16 +99,17 @@ export default function Expenses() {
                 </div>
               )}
               <div className="space-y-2">
-                {group.items.map((e) => (
-                  <TransactionCard
-                    key={e.id}
-                    title={e.notes}
-                    amount={e.amount}
-                    date={e.date}
-                    category={categoryMap.get(e.category_id)}
-                    editTo={`/expenses/${e.id}/edit`}
-                    onDelete={() => handleDelete(e.id)}
-                  />
+                {group.items.map((e, i) => (
+                  <div key={e.id} className="stagger-in" style={{ animationDelay: `${Math.min(i, 10) * 30}ms` }}>
+                    <TransactionCard
+                      title={e.notes}
+                      amount={e.amount}
+                      date={e.date}
+                      category={categoryMap.get(e.category_id)}
+                      editTo={`/expenses/${e.id}/edit`}
+                      onDelete={() => handleDelete(e.id)}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
