@@ -2,7 +2,7 @@
 // Builds personalised 7-day and 30-day plans from real spending behaviour:
 // per-category recommended caps, suggested reductions and projected savings.
 // Recomputed whenever expenses change so the plan stays current.
-import { parseISO, todayISO, daysBetween, addDays } from '../lib/dates'
+import { parseISO, todayISO, daysBetween, addDays, isSameMonth, endOfMonthISO } from '../lib/dates'
 
 // How aggressively to trim each category, keyed by ICON (language-independent,
 // so renaming a category — e.g. to German — never breaks this). Default 10%.
@@ -12,17 +12,27 @@ const REDUCTION_BY_ICON = {
 }
 const DEFAULT_REDUCTION = 0.1
 
-/** Average daily spend per category over the trailing `lookback` days. */
-function dailyRatesByCategory(expenses, lookback = 30) {
-  const start = addDays(todayISO(), -lookback)
+/** Average daily spend per category over the `lookback` days ending `endISO`. */
+function dailyRatesByCategory(expenses, endISO, lookback = 30) {
+  const end = parseISO(endISO)
+  const start = addDays(endISO, -lookback)
   const totals = new Map()
   for (const e of expenses || []) {
     const d = parseISO(e.date)
-    if (d >= start) totals.set(e.category_id, (totals.get(e.category_id) || 0) + Number(e.amount))
+    if (d >= start && d <= end) totals.set(e.category_id, (totals.get(e.category_id) || 0) + Number(e.amount))
   }
   const rates = new Map()
   for (const [catId, total] of totals.entries()) rates.set(catId, total / lookback)
   return rates
+}
+
+/** The plan's pace window ends today for the current month, or at that past
+ *  month's last day — otherwise a past month's plan would read this month's
+ *  spending, not its own. */
+function endDateFor(ref) {
+  if (!ref) return todayISO()
+  const refDate = ref instanceof Date ? ref : parseISO(ref)
+  return isSameMonth(todayISO(), refDate) ? todayISO() : endOfMonthISO(refDate)
 }
 
 function buildPlan({ horizon, rates, categoryMap }) {
@@ -53,10 +63,11 @@ function buildPlan({ horizon, rates, categoryMap }) {
   return { horizon, lines, projectedSavings, projectedSpend, baselineSpend }
 }
 
-export function savingPlans({ expenses, categoryMap }) {
+export function savingPlans({ expenses, categoryMap, ref }) {
   // Use up to 30 days of history; if the user has less, the rate still works.
-  const lookback = Math.max(7, Math.min(30, daysBetween(oldestDate(expenses), todayISO()) || 30))
-  const rates = dailyRatesByCategory(expenses, lookback)
+  const endISO = endDateFor(ref)
+  const lookback = Math.max(7, Math.min(30, daysBetween(oldestDate(expenses), endISO) || 30))
+  const rates = dailyRatesByCategory(expenses, endISO, lookback)
   return {
     week: buildPlan({ horizon: 7, rates, categoryMap }),
     month: buildPlan({ horizon: 30, rates, categoryMap }),

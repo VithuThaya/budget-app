@@ -4,8 +4,8 @@
 // expenses/budgets change, so alerts update live as new expenses are added.
 import {
   spendByCategory, trailingWeeklyAverage, currentWeekCategory,
-} from './selectors'
-import { weeklyTotals } from '../lib/dates'
+} from './selectors.js'
+import { weeklyTotals } from '../lib/dates.js'
 
 const SPIKE_THRESHOLD = 0.25 // +25% vs trailing average triggers a spike alert
 const NEAR_BUDGET = 0.85 // 85% of budget triggers a proximity warning

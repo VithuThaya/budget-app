@@ -2,7 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import { toPng } from 'html-to-image'
 import {
   PieChart, LineChart, BarChart3, PiggyBank, CalendarRange, Sparkles,
-  Download, TrendingDown, Trophy, CalendarCheck, Loader2, ChevronLeft, ChevronRight,
+  Download, TrendingDown, TrendingUp, Landmark, Trophy, CalendarCheck, Loader2,
+  ChevronLeft, ChevronRight, Wallet, Lightbulb,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
@@ -10,32 +11,41 @@ import PageHeader from '../components/PageHeader'
 import PieBreakdown from '../components/charts/PieBreakdown'
 import TrendLine from '../components/charts/TrendLine'
 import WeeklyBars from '../components/charts/WeeklyBars'
+import MonthlyBars from '../components/charts/MonthlyBars'
+import CategoryTrend from '../components/charts/CategoryTrend'
+import SpendHeatmap from '../components/charts/SpendHeatmap'
 import ProgressBar from '../components/ProgressBar'
 import Money from '../components/Money'
 import EmptyState from '../components/EmptyState'
+import StatCard from '../components/StatCard'
+import AlertBanner from '../components/AlertBanner'
 import { formatCHF, formatPct } from '../lib/money'
 import {
-  monthlyDailyTotals, weeklyTotals, formatMonthLabel, isSameMonth, isThisWeek,
+  monthlyDailyTotals, weeklyTotals, monthlyWeeklyTotals, formatMonthLabel, isSameMonth,
   startOfWeek, startOfMonth, addDays, addMonths, parseISO, toISODate, todayISO,
 } from '../lib/dates'
-import { categoryPieData } from '../logic/selectors'
+import {
+  categoryPieData, monthSpend, fixedDueThisMonth, monthlySeries, categoryMonthlySeries, yearlyDailyTotals,
+} from '../logic/selectors'
+import { monthSavings } from '../logic/savings'
 import { savingsPotential } from '../logic/savingsPotential'
 import { savingPlans } from '../logic/savingsPlan'
 import { monthlyStory } from '../logic/monthlyStory'
+import { generateInsights } from '../logic/insights'
+
+const TABS = [
+  { id: 'month', label: 'Monat' },
+  { id: 'year', label: 'Jahr' },
+  { id: 'advisor', label: 'Berater' },
+]
 
 export default function Reports() {
-  const { expenses, incomes, categoryMap } = useData()
+  const { expenses, incomes, fixedCosts, savingsContributions, budgets, categoryMap } = useData()
+  const [tab, setTab] = useState('month')
   const [cursor, setCursor] = useState(() => startOfMonth())
+  const [year, setYear] = useState(() => new Date().getFullYear())
   const isCurrent = isSameMonth(todayISO(), cursor)
-
-  const pie = useMemo(() => categoryPieData(expenses, categoryMap, { monthOnly: true, ref: cursor }), [expenses, categoryMap, cursor])
-  const trend = useMemo(() => monthlyDailyTotals(expenses, cursor), [expenses, cursor])
-  const weekly = useMemo(() => weeklyTotals(expenses, 8), [expenses])
-
-  const compare = useMemo(() => buildComparisons(expenses, cursor), [expenses, cursor])
-  const potential = useMemo(() => savingsPotential({ expenses, categoryMap }), [expenses, categoryMap])
-  const plans = useMemo(() => savingPlans({ expenses, categoryMap }), [expenses, categoryMap])
-  const story = useMemo(() => monthlyStory({ expenses, incomes, categoryMap, ref: cursor }), [expenses, incomes, categoryMap, cursor])
+  const isCurrentYear = year === new Date().getFullYear()
 
   if (expenses.length === 0) {
     return (
@@ -50,19 +60,93 @@ export default function Reports() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Berichte" subtitle={`Einblicke für ${formatMonthLabel(cursor)}`}>
-        <MonthSwitcher cursor={cursor} setCursor={setCursor} isCurrent={isCurrent} />
+      <PageHeader title="Berichte" subtitle="Einblicke, Trends und Sparpläne.">
+        <TabSwitcher tab={tab} setTab={setTab} />
       </PageHeader>
+
+      {tab === 'month' && (
+        <MonthTab
+          cursor={cursor} setCursor={setCursor} isCurrent={isCurrent}
+          expenses={expenses} incomes={incomes} fixedCosts={fixedCosts}
+          savingsContributions={savingsContributions} categoryMap={categoryMap}
+        />
+      )}
+      {tab === 'year' && (
+        <YearTab
+          year={year} setYear={setYear} isCurrentYear={isCurrentYear}
+          expenses={expenses} incomes={incomes} fixedCosts={fixedCosts}
+          savingsContributions={savingsContributions} categoryMap={categoryMap}
+        />
+      )}
+      {tab === 'advisor' && (
+        <AdvisorTab expenses={expenses} incomes={incomes} fixedCosts={fixedCosts} budgets={budgets} categoryMap={categoryMap} />
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+function TabSwitcher({ tab, setTab }) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
+      {TABS.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => setTab(t.id)}
+          className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium ${
+            tab === t.id ? 'bg-accent text-white' : 'text-zinc-400 hover:bg-ink-800 hover:text-zinc-100'
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Monat
+// ---------------------------------------------------------------------------
+function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts, savingsContributions, categoryMap }) {
+  const monthLabel = formatMonthLabel(cursor)
+
+  const pie = useMemo(() => categoryPieData(expenses, categoryMap, { monthOnly: true, ref: cursor }), [expenses, categoryMap, cursor])
+  const trend = useMemo(() => monthlyDailyTotals(expenses, cursor), [expenses, cursor])
+  const weekly = useMemo(
+    () => (isCurrent ? weeklyTotals(expenses, 8) : monthlyWeeklyTotals(expenses, cursor)),
+    [expenses, cursor, isCurrent],
+  )
+  const compare = useMemo(() => buildComparisons(expenses, cursor, isCurrent), [expenses, cursor, isCurrent])
+  const fixedDueMonth = useMemo(() => fixedDueThisMonth(fixedCosts, toISODate(cursor)), [fixedCosts, cursor])
+  const variableSpend = useMemo(() => monthSpend(expenses, cursor), [expenses, cursor])
+  const savedMonth = useMemo(() => monthSavings(savingsContributions, cursor), [savingsContributions, cursor])
+  const potential = useMemo(() => savingsPotential({ expenses, categoryMap, ref: cursor }), [expenses, categoryMap, cursor])
+  const plans = useMemo(() => savingPlans({ expenses, categoryMap, ref: cursor }), [expenses, categoryMap, cursor])
+  const story = useMemo(() => monthlyStory({ expenses, incomes, categoryMap, ref: cursor }), [expenses, incomes, categoryMap, cursor])
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-zinc-400">Einblicke für {monthLabel}</p>
+        <MonthSwitcher cursor={cursor} setCursor={setCursor} isCurrent={isCurrent} />
+      </div>
+
+      {/* Wohin floss dein Geld */}
+      <section className="card p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Wohin floss dein Geld
+        </h2>
+        <AllocationBar fixed={fixedDueMonth} variable={variableSpend} saved={savedMonth} />
+      </section>
 
       {/* Comparison summary cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {isCurrent && (
-          <ComparisonCard
-            title="Diese Woche vs. Vorwoche" icon={CalendarRange}
-            current={compare.week.current} previous={compare.week.previous} />
-        )}
         <ComparisonCard
-          title={isCurrent ? 'Dieser Monat vs. Vormonat' : `${formatMonthLabel(cursor)} vs. Vormonat`}
+          title={isCurrent ? 'Diese Woche vs. Vorwoche' : 'Letzte Woche im Monat vs. Vorwoche'}
+          icon={CalendarRange}
+          current={compare.week.current} previous={compare.week.previous} />
+        <ComparisonCard
+          title={isCurrent ? 'Dieser Monat vs. Vormonat' : `${monthLabel} vs. Vormonat`}
           icon={CalendarRange}
           current={compare.month.current} previous={compare.month.previous} />
       </div>
@@ -77,25 +161,22 @@ export default function Reports() {
         </section>
         <section className="card p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Täglicher Verlauf — {formatMonthLabel(cursor)}
+            <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Täglicher Verlauf — {monthLabel}
           </h2>
           <TrendLine data={trend} />
         </section>
       </div>
 
-      {/* Weekly comparison bars (trailing weeks — a live view, current month only) */}
-      {isCurrent && (
-        <section className="card p-5">
-          <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
-            <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Wochenvergleich (8 Wochen)
-          </h2>
-          <WeeklyBars data={weekly} height={260} />
-        </section>
-      )}
+      {/* Weekly bars — trailing 8 weeks live, or the selected past month's own weeks */}
+      <section className="card p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <BarChart3 className="h-[18px] w-[18px] text-accent-soft" />
+          {isCurrent ? 'Wochenvergleich (8 Wochen)' : `Wochenverlauf — ${monthLabel}`}
+        </h2>
+        <WeeklyBars data={weekly} height={260} />
+      </section>
 
-      {/* Savings potential + saving plans are forward-looking (current pace) — current month only */}
-      {isCurrent && (
-      <>
+      {/* Savings potential */}
       <section className="card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
@@ -106,11 +187,13 @@ export default function Reports() {
           </span>
         </div>
         {potential.items.length === 0 ? (
-          <p className="text-sm text-zinc-500">Keine flexiblen Ausgaben diesen Monat erkannt — nichts Offensichtliches zum Kürzen.</p>
+          <p className="text-sm text-zinc-500">
+            Keine flexiblen Ausgaben {isCurrent ? 'diesen Monat' : `im ${monthLabel}`} erkannt — nichts Offensichtliches zum Kürzen.
+          </p>
         ) : (
           <>
             <p className="mb-4 text-sm text-zinc-400">
-              Wenn du flexible Kategorien diesen Monat kürzt, könntest du etwa{' '}
+              Wenn du flexible Kategorien {isCurrent ? 'diesen Monat' : `im ${monthLabel}`} kürzt, könntest du etwa{' '}
               <span className="font-semibold text-green-300">{formatCHF(potential.totalSaving)}</span>{' '}
               sparen ({formatPct(potential.pctOfSpend)} deiner Ausgaben).
             </p>
@@ -142,14 +225,15 @@ export default function Reports() {
         <h2 className="mb-1 flex items-center gap-2 font-semibold text-zinc-100">
           <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Sparplan-Generator
         </h2>
-        <p className="mb-4 text-sm text-zinc-400">Persönliche Limits auf Basis deines echten Ausgabentempos. Aktualisiert sich mit jeder Ausgabe.</p>
+        <p className="mb-4 text-sm text-zinc-400">
+          Persönliche Limits auf Basis deines echten Ausgabentempos.{' '}
+          {isCurrent ? 'Aktualisiert sich mit jeder Ausgabe.' : `Basierend auf dem Tempo im ${monthLabel}.`}
+        </p>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <PlanCard title="7-Tage-Plan" plan={plans.week} />
           <PlanCard title="30-Tage-Plan" plan={plans.month} />
         </div>
       </section>
-      </>
-      )}
 
       {/* Monthly story */}
       <MonthlyStory story={story} cursor={cursor} />
@@ -157,7 +241,6 @@ export default function Reports() {
   )
 }
 
-// ---------------------------------------------------------------------------
 function MonthSwitcher({ cursor, setCursor, isCurrent }) {
   return (
     <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
@@ -183,6 +266,162 @@ function MonthSwitcher({ cursor, setCursor, isCurrent }) {
   )
 }
 
+// Fix/Variabel/Gespart split for "Wohin floss dein Geld" — same three buckets
+// the Dashboard's available-to-spend chain uses, so the numbers never drift.
+function AllocationBar({ fixed, variable, saved }) {
+  const total = fixed + variable + saved
+  if (total <= 0) {
+    return <p className="text-sm text-zinc-500">Noch keine Bewegungen in diesem Monat.</p>
+  }
+  const segments = [
+    { key: 'fixed', label: 'Fixkosten', value: fixed, color: '#f59e0b' },
+    { key: 'variable', label: 'Variabel', value: variable, color: '#2563eb' },
+    { key: 'saved', label: 'Gespart', value: saved, color: '#22c55e' },
+  ]
+  return (
+    <div>
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-ink-800">
+        {segments.map((s) => s.value > 0 && (
+          <div key={s.key} style={{ width: `${(s.value / total) * 100}%`, backgroundColor: s.color }} />
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        {segments.map((s) => (
+          <div key={s.key}>
+            <span className="flex items-center gap-1.5 text-xs text-zinc-400">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: s.color }} /> {s.label}
+            </span>
+            <p className="mt-0.5 font-semibold text-zinc-100"><Money value={s.value} /></p>
+            <p className="text-xs text-zinc-500">{formatPct(s.value / total)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Jahr
+// ---------------------------------------------------------------------------
+function YearTab({ year, setYear, isCurrentYear, expenses, incomes, fixedCosts, savingsContributions, categoryMap }) {
+  const series = useMemo(
+    () => monthlySeries({ incomes, expenses, fixedCosts, contributions: savingsContributions, year }),
+    [incomes, expenses, fixedCosts, savingsContributions, year],
+  )
+  const { data: catData, series: catSeries } = useMemo(
+    () => categoryMonthlySeries({ expenses, categoryMap, year, topN: 5 }),
+    [expenses, categoryMap, year],
+  )
+  const dailyTotals = useMemo(() => yearlyDailyTotals(expenses, year), [expenses, year])
+
+  const totalIncome = series.reduce((a, r) => a + r.income, 0)
+  const totalExpense = series.reduce((a, r) => a + r.expense, 0)
+  const totalFixed = series.reduce((a, r) => a + r.fixed, 0)
+  const totalSaved = series.reduce((a, r) => a + r.saved, 0)
+  const savingsRate = totalIncome > 0 ? totalSaved / totalIncome : null
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-zinc-400">Einblicke für {year}</p>
+        <YearSwitcher year={year} setYear={setYear} isCurrentYear={isCurrentYear} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Einnahmen" value={totalIncome} icon={TrendingUp} accent="#22c55e" />
+        <StatCard label="Ausgaben" value={totalExpense} icon={TrendingDown} accent="#ef4444" />
+        <StatCard label="Fixkosten" value={totalFixed} icon={Landmark} accent="#f59e0b" />
+        <RatioCard label="Sparquote" ratio={savingsRate} icon={PiggyBank} accent="#22c55e" />
+      </div>
+
+      <section className="card p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Einnahmen vs. Ausgaben
+        </h2>
+        <MonthlyBars data={series} />
+      </section>
+
+      <section className="card p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Kategorien im Jahresverlauf
+        </h2>
+        <CategoryTrend data={catData} series={catSeries} />
+      </section>
+
+      <section className="card p-5">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <CalendarRange className="h-[18px] w-[18px] text-accent-soft" /> Ausgabentage {year}
+        </h2>
+        <SpendHeatmap year={year} dailyTotals={dailyTotals} />
+      </section>
+    </div>
+  )
+}
+
+function YearSwitcher({ year, setYear, isCurrentYear }) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
+      <button
+        onClick={() => setYear((y) => y - 1)}
+        aria-label="Vorheriges Jahr"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 cursor-pointer"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <span className="min-w-[4rem] px-2 text-center text-sm font-medium text-zinc-100">{year}</span>
+      <button
+        onClick={() => setYear((y) => y + 1)}
+        disabled={isCurrentYear}
+        aria-label="Nächstes Jahr"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
+
+// Same visual language as StatCard, but for a percentage instead of a CHF value.
+function RatioCard({ label, ratio, icon: Icon, accent = '#2563eb' }) {
+  return (
+    <div className="card p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="stat-label">{label}</span>
+        {Icon && (
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: `${accent}22`, color: accent }}>
+            <Icon className="h-[18px] w-[18px]" />
+          </span>
+        )}
+      </div>
+      <div className="mt-2.5 truncate text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
+        {ratio != null ? formatPct(ratio) : '—'}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Tab: Berater
+// ---------------------------------------------------------------------------
+function AdvisorTab({ expenses, incomes, fixedCosts, budgets, categoryMap }) {
+  const insights = useMemo(
+    () => generateInsights({ expenses, incomes, fixedCosts, categoryMap, budgets }),
+    [expenses, incomes, fixedCosts, categoryMap, budgets],
+  )
+  return (
+    <section className="card p-5">
+      <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+        <Lightbulb className="h-[18px] w-[18px] text-accent-soft" /> Dein Berater
+      </h2>
+      <div className="space-y-3">
+        {insights.map((i) => <AlertBanner key={i.id} level={i.level} title={i.title} detail={i.detail} />)}
+      </div>
+    </section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Shared subcomponents (Monat tab)
 // ---------------------------------------------------------------------------
 function ComparisonCard({ title, icon: Icon, current, previous }) {
   const delta = current - previous
@@ -362,16 +601,18 @@ function HighlightRow({ icon: Icon, tint, label, value, sub }) {
 }
 
 // ---------------------------------------------------------------------------
-function buildComparisons(expenses, ref = new Date()) {
+function buildComparisons(expenses, ref = new Date(), isCurrent = true) {
   const refDate = ref instanceof Date ? ref : parseISO(ref)
 
-  // Week comparison is a live view — only shown/used for the current month.
-  const weekStart = startOfWeek()
+  // Week comparison: today's week if current, else the selected month's last week.
+  const weekAnchor = isCurrent ? new Date() : new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)
+  const weekStart = startOfWeek(weekAnchor)
+  const weekEnd = addDays(weekStart, 7)
   const lastWeekStart = addDays(weekStart, -7)
   let weekCur = 0, weekPrev = 0
   for (const e of expenses) {
     const d = parseISO(e.date)
-    if (isThisWeek(e.date)) weekCur += Number(e.amount)
+    if (d >= weekStart && d < weekEnd) weekCur += Number(e.amount)
     else if (d >= lastWeekStart && d < weekStart) weekPrev += Number(e.amount)
   }
 

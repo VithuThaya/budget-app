@@ -1,7 +1,7 @@
 // Shared derivations used by pages and the intelligence modules.
 // Keeping these pure + centralised guarantees Dashboard, Budgets and Reports
 // all compute the same numbers from the same source arrays.
-import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO, todayISO } from '../lib/dates.js'
+import { isSameMonth, isThisWeek, startOfWeek, addDays, parseISO, todayISO, toISODate } from '../lib/dates.js'
 import { scheduledDateFor } from './fixedSchedule.js'
 
 /** Total spent in the month of `ref` (default: current month). */
@@ -221,4 +221,68 @@ export function leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisM
     - fixedDueThisMonth(fixedCosts)
     - monthSpend(expenses)
     - savedThisMonth
+}
+
+// --- Year view (Reports "Jahr" tab) ----------------------------------------
+
+/** Per-month totals for a calendar year: income, spend, fixed costs due, saved.
+ *  Returns 12 rows Jan->Dec: [{ month, label, income, expense, fixed, saved }].
+ *  `contributions` (savings) are summed inline rather than via savings.js's
+ *  monthSavings to avoid a circular import (selectors.js stays leaf-level). */
+export function monthlySeries({ incomes, expenses, fixedCosts, contributions, year }) {
+  const rows = []
+  for (let m = 0; m < 12; m++) {
+    const ref = new Date(year, m, 1)
+    const saved = (contributions || [])
+      .filter((c) => isSameMonth(c.date, ref))
+      .reduce((a, c) => a + Number(c.amount), 0)
+    rows.push({
+      month: m,
+      label: ref.toLocaleDateString('de-CH', { month: 'short' }),
+      income: monthIncome(incomes, ref),
+      expense: monthSpend(expenses, ref),
+      fixed: fixedDueThisMonth(fixedCosts, toISODate(ref)),
+      saved,
+    })
+  }
+  return rows
+}
+
+/** Per-category monthly spend for a calendar year, top `topN` categories by
+ *  yearly total. Recharts-shaped: `data` rows keyed by category id, `series`
+ *  lists which keys to draw + their name/color. */
+export function categoryMonthlySeries({ expenses, categoryMap, year, topN = 5 }) {
+  const yearExpenses = (expenses || []).filter((e) => Number(String(e.date).slice(0, 4)) === year)
+  const totals = new Map()
+  for (const e of yearExpenses) totals.set(e.category_id, (totals.get(e.category_id) || 0) + Number(e.amount))
+  const topCatIds = [...totals.entries()].sort((a, b) => b[1] - a[1]).slice(0, topN).map(([id]) => id)
+
+  const data = []
+  for (let m = 0; m < 12; m++) {
+    const row = { label: new Date(year, m, 1).toLocaleDateString('de-CH', { month: 'short' }) }
+    for (const catId of topCatIds) row[catId] = 0
+    data.push(row)
+  }
+  for (const e of yearExpenses) {
+    if (!topCatIds.includes(e.category_id)) continue
+    data[parseISO(e.date).getMonth()][e.category_id] += Number(e.amount)
+  }
+
+  const series = topCatIds.map((id) => {
+    const cat = categoryMap.get(id)
+    return { key: id, name: cat?.name || 'Ohne Kategorie', color: cat?.color || '#64748b' }
+  })
+  return { data, series }
+}
+
+/** Daily spend for every expense in `year`, keyed 'YYYY-MM-DD'. Feeds the
+ *  spend-day heatmap; the component does its own day-grid layout. */
+export function yearlyDailyTotals(expenses, year) {
+  const map = new Map()
+  for (const e of expenses || []) {
+    if (Number(String(e.date).slice(0, 4)) !== year) continue
+    const d = String(e.date).slice(0, 10)
+    map.set(d, (map.get(d) || 0) + Number(e.amount))
+  }
+  return map
 }

@@ -2,7 +2,7 @@
 // the sum of its contributions; everything else (progress, monthly pace,
 // time-to-target) is derived from the raw goals + contributions arrays so the
 // Savings page and the Dashboard always agree.
-import { isThisMonth, parseISO } from '../lib/dates'
+import { isSameMonth, parseISO } from '../lib/dates'
 
 const clamp01 = (n) => Math.max(0, Math.min(1, n || 0))
 
@@ -18,10 +18,10 @@ export function totalSaved(contributions) {
   return (contributions || []).reduce((a, c) => a + Number(c.amount), 0)
 }
 
-/** Contributions made in the current calendar month (all goals). */
-export function monthSavings(contributions) {
+/** Contributions made in the month of `ref` (default: current month, all goals). */
+export function monthSavings(contributions, ref) {
   return (contributions || [])
-    .filter((c) => isThisMonth(c.date))
+    .filter((c) => isSameMonth(c.date, ref))
     .reduce((a, c) => a + Number(c.amount), 0)
 }
 
@@ -38,7 +38,7 @@ export function monthsUntil(dateISO) {
 export function goalProgress(goal, contributions) {
   const balance = goalBalance(goal.id, contributions)
   const savedThisMonth = (contributions || [])
-    .filter((c) => c.goal_id === goal.id && isThisMonth(c.date))
+    .filter((c) => c.goal_id === goal.id && isSameMonth(c.date))
     .reduce((a, c) => a + Number(c.amount), 0)
 
   const target = goal.target_amount != null ? Number(goal.target_amount) : null

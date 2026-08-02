@@ -134,6 +134,30 @@ export function dailyTotals(items, days = 30, field = 'amount') {
   return buckets
 }
 
+/** Bucket items into ISO weeks (Mon-Sun) covering the calendar month of `ref`.
+ *  Used for a past month's weekly view, where "trailing 8 weeks from today"
+ *  (weeklyTotals) doesn't apply. Returns oldest->newest: [{ start, end, label, total }]. */
+export function monthlyWeeklyTotals(items, ref = new Date(), field = 'amount') {
+  const r = ref instanceof Date ? ref : parseISO(ref)
+  const monthStart = startOfMonth(r)
+  const monthEnd = addMonths(monthStart, 1)
+  const buckets = []
+  for (let start = startOfWeek(monthStart); start < monthEnd; start = addDays(start, 7)) {
+    buckets.push({
+      start,
+      end: addDays(start, 7),
+      label: start.toLocaleDateString('de-CH', { day: '2-digit', month: 'short' }),
+      total: 0,
+    })
+  }
+  for (const it of items || []) {
+    const d = parseISO(it.date)
+    const b = buckets.find((bk) => d >= bk.start && d < bk.end)
+    if (b) b.total += Number(it[field]) || 0
+  }
+  return buckets
+}
+
 /** Bucket items into every calendar day of the month containing `ref`.
  *  Returns oldest->newest: [{ date, label, total }]. */
 export function monthlyDailyTotals(items, ref = new Date(), field = 'amount') {

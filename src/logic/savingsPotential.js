@@ -1,7 +1,7 @@
 // Savings Potential
 // Estimates how much could be saved this month if discretionary categories
 // were trimmed toward a target share of their current spend.
-import { categoryPieData, monthSpend } from './selectors'
+import { categoryPieData, monthSpend } from './selectors.js'
 
 // Icons whose categories are treated as "flexible" — matched by ICON, not name,
 // so renaming a category (e.g. to German) never breaks this. Utensils=dining,
@@ -10,9 +10,9 @@ const DISCRETIONARY_ICONS = new Set(['Utensils', 'Clapperboard', 'ShoppingBag', 
 // Suggested trim factor for discretionary spend (reduce by 20%).
 const TRIM = 0.2
 
-export function savingsPotential({ expenses, categoryMap }) {
-  const pie = categoryPieData(expenses, categoryMap, { monthOnly: true })
-  const total = monthSpend(expenses)
+export function savingsPotential({ expenses, categoryMap, ref }) {
+  const pie = categoryPieData(expenses, categoryMap, { monthOnly: true, ref })
+  const total = monthSpend(expenses, ref)
 
   const items = pie
     .map((row) => {
