@@ -11,21 +11,24 @@ import {
   fixedPaidTotal, monthCarryover, fixedDueThisMonth, leftToSpendThisMonth,
   projectedMonthEndBalance, fixedOpenThisMonth, isFixedOpenThisMonth,
 } from '../logic/selectors'
-import { monthSavings } from '../logic/savings'
+import { monthSavings, monthlySavingsTarget } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
 import { monthEndCheck } from '../logic/fixedSchedule'
 import { weeklyTotals, formatMonthLabel, todayISO, parseISO, formatDate } from '../lib/dates'
+import { formatPct } from '../lib/money'
+import { useCountUp } from '../lib/useCountUp'
 import StatCard from '../components/StatCard'
 import AlertBanner from '../components/AlertBanner'
 import ProgressBar from '../components/ProgressBar'
 import WeeklyBars from '../components/charts/WeeklyBars'
 import TransactionCard from '../components/TransactionCard'
 import EmptyState from '../components/EmptyState'
+import SavingsRing from '../components/SavingsRing'
 import Money from '../components/Money'
 
 export default function Dashboard() {
   const {
-    expenses, incomes, fixedCosts, savingsContributions,
+    expenses, incomes, fixedCosts, savingsContributions, savingsGoals,
     categories, budgets, categoryMap, deleteExpense, loading,
     fixedCheckMonth, confirmFixedCheck,
   } = useData()
@@ -36,6 +39,7 @@ export default function Dashboard() {
   const fixedMonth = useMemo(() => monthlyFixedTotal(fixedCosts), [fixedCosts])
   const fixedDueMonth = useMemo(() => fixedDueThisMonth(fixedCosts), [fixedCosts])
   const savedMonth = useMemo(() => monthSavings(savingsContributions), [savingsContributions])
+  const savingsTarget = useMemo(() => monthlySavingsTarget(savingsGoals), [savingsGoals])
   const carryover = useMemo(() => monthCarryover(incomes, expenses, fixedCosts), [incomes, expenses, fixedCosts])
   const leftToSpend = useMemo(
     () => leftToSpendThisMonth({ incomes, expenses, fixedCosts, savedThisMonth: savedMonth }),
@@ -86,6 +90,16 @@ export default function Dashboard() {
   )
 
   const [expanded, setExpanded] = useState(false)
+  const animatedBalance = useCountUp(balance)
+
+  // Balance at the start of the month, so the delta chip can show carryover
+  // as a percentage change rather than just a raw CHF figure. Percent-of-start
+  // blows up when the starting balance is near zero (a CHF 5 swing on a CHF 10
+  // balance reads as "50%") — only show it once the base is large enough to
+  // be a meaningful denominator.
+  // ponytail: fixed CHF 100 floor, not adaptive — revisit if it feels wrong at other balances
+  const monthStartBalance = balance - carryover
+  const carryoverPct = monthStartBalance > 100 ? carryover / monthStartBalance : null
 
   if (loading) return <DashboardSkeleton />
 
@@ -99,7 +113,7 @@ export default function Dashboard() {
       {check && <MonthEndCheck check={check} onConfirm={confirmFixedCheck} />}
 
       {/* Account balance (bank-style: all income − all expenses, carries forward) */}
-      <section className="card card-float mb-5 overflow-hidden bg-aurora p-5 shadow-glow-lg sm:p-6">
+      <section className="card card-float card-sheen press mb-5 bg-aurora p-5 shadow-glow-lg sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <span className="stat-label flex items-center gap-1.5">
             <Wallet className="h-4 w-4" /> Kontostand
@@ -110,8 +124,14 @@ export default function Dashboard() {
         </div>
         <p className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Jetzt auf dem Konto</p>
         <div className={`mt-0.5 truncate text-4xl font-bold tracking-tight sm:text-5xl ${balance >= 0 ? 'text-good' : 'text-bad'}`}>
-          <Money value={balance} />
+          <Money value={animatedBalance} />
         </div>
+        {carryover !== 0 && (
+          <span className={`chip mt-2 ${carryover > 0 ? 'bg-good/15 text-good' : 'bg-bad/15 text-bad'}`}>
+            {carryover > 0 ? '▲' : '▼'} <Money value={carryover} signed />
+            {carryoverPct !== null && ` (${formatPct(Math.abs(carryoverPct))})`} diesen Monat
+          </span>
+        )}
 
         <button
           onClick={() => setExpanded((e) => !e)}
@@ -166,18 +186,23 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Stat row */}
+      {/* Stat row — staggered entrance, alternating cards floated slightly lower */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Einnahmen diesen Monat" value={incomeMonth} icon={TrendingUp} accent="#34D399" />
-        <StatCard label="Fixkosten / Mt." value={fixedMonth} icon={CalendarClock} accent="#F5B942" />
-        <StatCard label="Ausgegeben diesen Monat" value={spentMonth} icon={TrendingDown} accent="#FF6B7A" />
-        <StatCard label={leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget'} value={leftToSpend} icon={Wallet} accent="#9D50BB" />
+        {[
+          { label: 'Einnahmen diesen Monat', value: incomeMonth, icon: TrendingUp, accent: '#34D399' },
+          { label: 'Fixkosten / Mt.', value: fixedMonth, icon: CalendarClock, accent: '#F5B942' },
+          { label: 'Ausgegeben diesen Monat', value: spentMonth, icon: TrendingDown, accent: '#FF6B7A' },
+          { label: leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget', value: leftToSpend, icon: Wallet, accent: '#9D50BB' },
+        ].map((s, i) => (
+          <div key={s.label} className={`stagger-in press ${i % 2 === 1 ? 'lg:mt-5' : ''}`} style={{ animationDelay: `${i * 60}ms` }}>
+            <StatCard label={s.label} value={s.value} icon={s.icon} accent={s.accent} />
+          </div>
+        ))}
       </div>
 
-
-      {/* Advisor + weekly */}
+      {/* Weekly chart + savings ring */}
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <section className="card p-5 lg:col-span-2">
+        <section className="card card-float press p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-silver">
               <CalendarDays className="h-[18px] w-[18px] text-accent-soft" /> Wöchentliche Ausgaben
@@ -187,7 +212,12 @@ export default function Dashboard() {
           <WeeklyBars data={weekly} height={220} />
         </section>
 
-        <section className="card p-5">
+        <SavingsRing saved={savedMonth} target={savingsTarget} />
+      </div>
+
+      {/* Advisor + budget status + recent */}
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <section className="card card-float press p-5">
           <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
             <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Ausgaben-Berater
           </h2>
@@ -197,11 +227,8 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
-      </div>
 
-      {/* Budget status + recent */}
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="card p-5">
+        <section className="card card-float press p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-silver">
               <Target className="h-[18px] w-[18px] text-accent-soft" /> Budget-Status
@@ -234,7 +261,7 @@ export default function Dashboard() {
           )}
         </section>
 
-        <section className="card p-5">
+        <section className="card card-float press p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-silver">Letzte Buchungen</h2>
             <Link to="/expenses" className="flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
@@ -349,6 +376,9 @@ function DashboardSkeleton() {
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="h-72 rounded-2xl bg-ink-800/70 lg:col-span-2" />
         <div className="h-72 rounded-2xl bg-ink-800/70" />
+      </div>
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-64 rounded-2xl bg-ink-800/70" />)}
       </div>
     </div>
   )

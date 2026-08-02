@@ -63,6 +63,13 @@ export function goalProgress(goal, contributions) {
   }
 }
 
+/** Sum of every pot's monthly_target. null if none of the goals has one set. */
+export function monthlySavingsTarget(goals) {
+  const withTarget = (goals || []).filter((g) => g.monthly_target != null && Number(g.monthly_target) > 0)
+  if (withTarget.length === 0) return null
+  return withTarget.reduce((a, g) => a + Number(g.monthly_target), 0)
+}
+
 /** Pie/legend data for the distribution donut: one slice per pot with money. */
 export function savingsPieData(goals, contributions) {
   return (goals || [])

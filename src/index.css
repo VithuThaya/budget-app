@@ -89,6 +89,17 @@ body::before {
   .card-float {
     @apply transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0;
   }
+  .press {
+    @apply transition-transform duration-150 ease-out active:scale-[0.985];
+  }
+  .card-sheen {
+    @apply relative overflow-hidden;
+  }
+  .card-sheen::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.1) 48%, transparent 62%);
+  }
   .stat-label {
     @apply text-xs font-medium uppercase tracking-wider text-zinc-400;
   }
@@ -131,6 +142,15 @@ body::before {
 }
 .stagger-in {
   animation: fade-in-up 0.4s ease-out backwards;
+}
+
+/* Drifting background orbs — see AuroraOrbs.jsx */
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(var(--drift-x, 3rem), var(--drift-y, -2rem)) scale(1.08); }
+}
+.orb-drift {
+  animation: drift var(--drift-duration, 26s) ease-in-out infinite alternate;
 }
 
 /* Respect reduced motion */

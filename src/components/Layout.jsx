@@ -5,6 +5,7 @@ import {
   BarChart3, Wallet, LogOut, X, CalendarClock, PiggyBank,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import AuroraOrbs from './AuroraOrbs'
 
 const NAV = [
   { to: '/', label: 'Übersicht', icon: LayoutDashboard, end: true },
@@ -56,6 +57,8 @@ export default function Layout({ session }) {
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
+      <AuroraOrbs />
+
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen flex-col border-r border-white/5 bg-ink-900/50 p-4 backdrop-blur-xl lg:flex">
         <Brand />

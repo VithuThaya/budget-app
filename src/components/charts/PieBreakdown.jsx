@@ -1,4 +1,4 @@
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, Label, ResponsiveContainer, Tooltip } from 'recharts'
 import { formatCHF } from '../../lib/money'
 import EmptyState from '../EmptyState'
 import { PieChart as PieIcon } from 'lucide-react'
@@ -14,16 +14,28 @@ export default function PieBreakdown({ data, onSliceClick }) {
   }
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row">
-      <div className="relative h-56 w-56 shrink-0">
+      <div className="h-56 w-56 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
+              key={data.length}
               data={data} dataKey="value" nameKey="name"
               innerRadius={60} outerRadius={94} paddingAngle={3} cornerRadius={8} stroke="none"
               onClick={onSliceClick ? (d) => onSliceClick(d) : undefined}
               className={onSliceClick ? 'cursor-pointer' : undefined}
             >
               {data.map((d, i) => <Cell key={i} fill={d.color} />)}
+              <Label
+                position="center"
+                content={({ viewBox }) => (
+                  <g>
+                    <text x={viewBox.cx} y={viewBox.cy - 9} textAnchor="middle" dominantBaseline="middle"
+                      fill="#A1A1AA" fontSize={11} fontWeight={500} letterSpacing="0.08em">GESAMT</text>
+                    <text x={viewBox.cx} y={viewBox.cy + 13} textAnchor="middle" dominantBaseline="middle"
+                      fill="#E0E0E0" fontSize={17} fontWeight={600}>{formatCHF(total)}</text>
+                  </g>
+                )}
+              />
             </Pie>
             <Tooltip
               contentStyle={{ background: 'rgba(22,26,46,0.92)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#E0E0E0', backdropFilter: 'blur(12px)' }}
@@ -31,10 +43,6 @@ export default function PieBreakdown({ data, onSliceClick }) {
             />
           </PieChart>
         </ResponsiveContainer>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="stat-label">Gesamt</span>
-          <span className="text-lg font-semibold text-silver">{formatCHF(total)}</span>
-        </div>
       </div>
       <ul className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
         {data.map((d) => (
