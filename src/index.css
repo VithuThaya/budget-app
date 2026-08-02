@@ -2,6 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/inter-700.woff2') format('woff2');
+}
+
 :root {
   color-scheme: dark;
 }
@@ -14,22 +43,23 @@ body,
 
 body {
   margin: 0;
-  background-color: #09090b;
+  background-color: #0f1020;
   color: #fafafa;
-  font-family: '"IBM Plex Sans"', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Subtle ambient gradient behind the app */
+/* Aurora field behind the app */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(60rem 40rem at 100% -10%, rgba(37, 99, 235, 0.10), transparent 60%),
-    radial-gradient(50rem 40rem at -10% 110%, rgba(37, 99, 235, 0.06), transparent 55%);
+    radial-gradient(55rem 45rem at 10% -10%, rgba(157, 80, 187, 0.22), transparent 60%),
+    radial-gradient(50rem 45rem at 100% 10%, rgba(43, 58, 138, 0.24), transparent 55%),
+    radial-gradient(45rem 40rem at 50% 120%, rgba(94, 58, 143, 0.18), transparent 55%);
   pointer-events: none;
 }
 
@@ -43,28 +73,48 @@ body::before {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-ink-700 bg-ink-850/80 shadow-card backdrop-blur-sm;
+    @apply relative rounded-2xl border border-white/10 bg-ink-850/60 shadow-card backdrop-blur-xl;
+  }
+  .card::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/25 to-transparent;
+  }
+  .card-solid {
+    @apply relative rounded-2xl border border-white/10 bg-ink-850 shadow-card;
+  }
+  .card-solid::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/25 to-transparent;
+  }
+  .card-float {
+    @apply transition-transform duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0;
   }
   .stat-label {
     @apply text-xs font-medium uppercase tracking-wider text-zinc-400;
   }
   .input {
-    @apply w-full rounded-xl border border-ink-700 bg-ink-900 px-3.5 py-2.5 text-sm text-zinc-100
-      placeholder:text-zinc-500 transition-colors duration-200
+    @apply w-full rounded-xl border border-white/10 bg-ink-900/70 px-3.5 py-2.5 text-sm text-zinc-100
+      placeholder:text-zinc-500 backdrop-blur-md transition-colors duration-200
       focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40;
+  }
+  .input-line {
+    @apply w-full border-0 border-b border-white/15 bg-transparent px-1 py-2.5 text-sm text-zinc-100
+      placeholder:text-zinc-500 transition-colors duration-200
+      focus:border-accent focus:outline-none focus:ring-0;
   }
   .label {
     @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-zinc-400;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
-      transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer;
+      transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer;
   }
   .btn-primary {
-    @apply btn bg-accent text-white hover:bg-accent-soft focus-visible:ring-2 focus-visible:ring-accent/50;
+    @apply btn bg-gradient-to-r from-accent to-accent-soft text-white shadow-glow
+      hover:brightness-110 focus-visible:ring-2 focus-visible:ring-accent/50;
   }
   .btn-ghost {
-    @apply btn border border-ink-700 bg-ink-800 text-zinc-200 hover:bg-ink-700;
+    @apply btn border border-white/10 bg-ink-800/70 text-zinc-200 backdrop-blur-md hover:bg-ink-700/80;
   }
   .btn-danger {
     @apply btn border border-bad/30 bg-bad/10 text-red-300 hover:bg-bad/20;
@@ -89,13 +139,13 @@ body::before {
 /* Slim scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3f3f46 transparent;
+  scrollbar-color: #3A4160 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: #3A4160;
   border-radius: 999px;
 }

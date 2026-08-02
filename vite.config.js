@@ -4,18 +4,18 @@ import react from '@vitejs/plugin-react'
 // Content-Security-Policy injected only into the production build. It limits where
 // the app may load code/data from, so a stray injection can't exfiltrate to an
 // attacker domain. connect-src allows only Supabase (REST + Realtime websocket);
-// fonts come from Google Fonts; 'unsafe-inline' on style-src is required by
-// Recharts/React inline styles. It is NOT applied in dev because Vite's HMR relies
-// on inline scripts that a strict script-src would block.
+// the Inter webfont is self-hosted under public/fonts, so html-to-image's PNG
+// export (Reports.jsx MonthlyStory) can embed it from 'self' with no external
+// font host needed. 'unsafe-inline' on style-src is required by Recharts/React
+// inline styles. It is NOT applied in dev because Vite's HMR relies on inline
+// scripts that a strict script-src would block.
 const CSP = [
   "default-src 'self'",
   "script-src 'self'",
-  // Supabase REST + Realtime websocket; Google Fonts is fetched by html-to-image
-  // to embed the webfont into the exported Monthly Story PNG.
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
   "img-src 'self' data: blob:",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

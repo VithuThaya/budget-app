@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Wallet, TrendingDown, TrendingUp, CalendarDays, ArrowRight, Sparkles, Target,
-  CalendarClock, ClipboardCheck, Check, Loader2,
+  CalendarClock, ClipboardCheck, Check, Loader2, ChevronDown,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
@@ -85,77 +85,93 @@ export default function Dashboard() {
     [expenses],
   )
 
+  const [expanded, setExpanded] = useState(false)
+
   if (loading) return <DashboardSkeleton />
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-[1.65rem]">Übersicht</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-silver sm:text-[1.65rem]">Übersicht</h1>
         <p className="mt-1 text-sm text-zinc-400">{formatMonthLabel()} im Überblick</p>
       </div>
 
       {check && <MonthEndCheck check={check} onConfirm={confirmFixedCheck} />}
 
       {/* Account balance (bank-style: all income − all expenses, carries forward) */}
-      <section className="card mb-5 overflow-hidden bg-gradient-to-br from-ink-900 to-ink-850 p-5">
+      <section className="card card-float mb-5 overflow-hidden bg-aurora p-5 shadow-glow-lg sm:p-6">
         <div className="flex items-center justify-between gap-3">
           <span className="stat-label flex items-center gap-1.5">
             <Wallet className="h-4 w-4" /> Kontostand
           </span>
-          <span className={`chip ${balance >= 0 ? 'bg-good/10 text-green-300' : 'bg-bad/10 text-red-300'}`}>
-            {balance >= 0 ? 'im Plus' : 'im Minus'}
+          <span className={`chip ${balance >= 0 ? 'bg-good/15 text-good' : 'bg-bad/15 text-bad'}`}>
+            {balance >= 0 ? '▲ im Plus' : '▼ im Minus'}
           </span>
         </div>
         <p className="mt-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Jetzt auf dem Konto</p>
-        <div className={`mt-0.5 truncate text-3xl font-bold tracking-tight sm:text-4xl ${balance >= 0 ? 'text-green-400' : 'text-red-300'}`}>
+        <div className={`mt-0.5 truncate text-4xl font-bold tracking-tight sm:text-5xl ${balance >= 0 ? 'text-good' : 'text-bad'}`}>
           <Money value={balance} />
         </div>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
-          <span className="whitespace-nowrap">Einnahmen <Money value={totalIncome} className="tabular-nums text-green-400" /></span>
-          <span className="whitespace-nowrap">− Ausgaben <Money value={totalSpent} className="tabular-nums text-zinc-300" /></span>
-          <Link to="/fixed-costs" className="whitespace-nowrap hover:text-accent-soft hover:underline cursor-pointer">
-            − Fixkosten <Money value={fixedBilled} className="tabular-nums text-zinc-300" />
-          </Link>
-        </div>
 
-        {/* Month-end projection. Converges with the live balance once every fixed
-            cost is debited — a mismatch on the 31st means something was missed. */}
-        <div className="mt-4 border-t border-ink-700 pt-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-              Ende {formatMonthLabel()} erwartet
+        <button
+          onClick={() => setExpanded((e) => !e)}
+          className="mt-4 flex w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-ink-900/40 px-3.5 py-2.5 text-xs font-medium text-zinc-400 backdrop-blur-md transition-colors hover:text-zinc-200 cursor-pointer"
+          aria-expanded={expanded}
+        >
+          <span>Details {expanded ? 'ausblenden' : 'anzeigen'}</span>
+          <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`} />
+        </button>
+
+        <div className={`grid transition-all duration-300 ease-out ${expanded ? 'mt-3 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+          <div className="overflow-hidden">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+              <span className="whitespace-nowrap">Einnahmen <Money value={totalIncome} className="tabular-nums text-good" /></span>
+              <span className="whitespace-nowrap">− Ausgaben <Money value={totalSpent} className="tabular-nums text-zinc-300" /></span>
+              <Link to="/fixed-costs" className="whitespace-nowrap hover:text-accent-soft hover:underline cursor-pointer">
+                − Fixkosten <Money value={fixedBilled} className="tabular-nums text-zinc-300" />
+              </Link>
+            </div>
+
+            {/* Month-end projection. Converges with the live balance once every fixed
+                cost is debited — a mismatch on the 31st means something was missed. */}
+            <div className="mt-4 border-t border-white/10 pt-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Ende {formatMonthLabel()} erwartet
+                </p>
+                {fixedStillOpen > 0 && (
+                  <span className="text-xs text-warn">
+                    − <Money value={fixedStillOpen} className="tabular-nums" /> offen
+                  </span>
+                )}
+              </div>
+              <div className={`mt-0.5 truncate text-2xl font-semibold tracking-tight ${projected >= 0 ? 'text-good' : 'text-bad'}`}>
+                <Money value={projected} />
+              </div>
+              {openCount > 0 ? (
+                <Link to="/fixed-costs" className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
+                  {openCount === 1 ? '1 Fixkosten-Abbuchung kommt noch' : `${openCount} Fixkosten-Abbuchungen kommen noch`}
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              ) : (
+                <p className="mt-1.5 text-xs text-good">Alle Fixkosten diesen Monat abgebucht.</p>
+              )}
+            </div>
+
+            <p className="mt-3 text-xs text-zinc-500">
+              Oben: Einnahmen − Ausgaben − bereits abgebuchte Fixkosten, fortlaufend wie dein Bankkonto.
+              Unten: was Ende Monat übrig ist, wenn keine weiteren Ausgaben dazukommen. Am Monatsende sind beide Zahlen gleich.
             </p>
-            {fixedStillOpen > 0 && (
-              <span className="text-xs text-amber-300">
-                − <Money value={fixedStillOpen} className="tabular-nums" /> offen
-              </span>
-            )}
           </div>
-          <div className={`mt-0.5 truncate text-2xl font-semibold tracking-tight ${projected >= 0 ? 'text-green-400' : 'text-red-300'}`}>
-            <Money value={projected} />
-          </div>
-          {openCount > 0 ? (
-            <Link to="/fixed-costs" className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
-              {openCount === 1 ? '1 Fixkosten-Abbuchung kommt noch' : `${openCount} Fixkosten-Abbuchungen kommen noch`}
-              <ArrowRight className="h-3 w-3" />
-            </Link>
-          ) : (
-            <p className="mt-1.5 text-xs text-green-300">Alle Fixkosten diesen Monat abgebucht.</p>
-          )}
         </div>
-
-        <p className="mt-3 text-xs text-zinc-500">
-          Oben: Einnahmen − Ausgaben − bereits abgebuchte Fixkosten, fortlaufend wie dein Bankkonto.
-          Unten: was Ende Monat übrig ist, wenn keine weiteren Ausgaben dazukommen. Am Monatsende sind beide Zahlen gleich.
-        </p>
       </section>
 
       {/* Stat row */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Einnahmen diesen Monat" value={incomeMonth} icon={TrendingUp} accent="#22c55e" />
-        <StatCard label="Fixkosten / Mt." value={fixedMonth} icon={CalendarClock} accent="#f59e0b" />
-        <StatCard label="Ausgegeben diesen Monat" value={spentMonth} icon={TrendingDown} accent="#ef4444" />
-        <StatCard label={leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget'} value={leftToSpend} icon={Wallet} accent="#2563eb" />
+        <StatCard label="Einnahmen diesen Monat" value={incomeMonth} icon={TrendingUp} accent="#34D399" />
+        <StatCard label="Fixkosten / Mt." value={fixedMonth} icon={CalendarClock} accent="#F5B942" />
+        <StatCard label="Ausgegeben diesen Monat" value={spentMonth} icon={TrendingDown} accent="#FF6B7A" />
+        <StatCard label={leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget'} value={leftToSpend} icon={Wallet} accent="#9D50BB" />
       </div>
 
 
@@ -163,7 +179,7 @@ export default function Dashboard() {
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <section className="card p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+            <h2 className="flex items-center gap-2 font-semibold text-silver">
               <CalendarDays className="h-[18px] w-[18px] text-accent-soft" /> Wöchentliche Ausgaben
             </h2>
             <Link to="/reports" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">Berichte ansehen</Link>
@@ -172,7 +188,7 @@ export default function Dashboard() {
         </section>
 
         <section className="card p-5">
-          <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
             <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Ausgaben-Berater
           </h2>
           <div className="space-y-2.5">
@@ -187,7 +203,7 @@ export default function Dashboard() {
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+            <h2 className="flex items-center gap-2 font-semibold text-silver">
               <Target className="h-[18px] w-[18px] text-accent-soft" /> Budget-Status
             </h2>
             <Link to="/budgets" className="text-xs font-medium text-accent-soft hover:underline cursor-pointer">Verwalten</Link>
@@ -220,7 +236,7 @@ export default function Dashboard() {
 
         <section className="card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold text-zinc-100">Letzte Buchungen</h2>
+            <h2 className="font-semibold text-silver">Letzte Buchungen</h2>
             <Link to="/expenses" className="flex items-center gap-1 text-xs font-medium text-accent-soft hover:underline cursor-pointer">
               Alle ansehen <ArrowRight className="h-3 w-3" />
             </Link>
@@ -272,13 +288,13 @@ function MonthEndCheck({ check, onConfirm }) {
   }
 
   return (
-    <section className="card mb-5 border-accent/40 bg-accent/5 p-5">
+    <section className="card mb-5 border-accent/30 bg-accent/5 p-5">
       <div className="flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent-soft">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent-soft shadow-glow">
           <ClipboardCheck className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-zinc-100">Monatsabschluss {monthLabel}</h2>
+          <h2 className="font-semibold text-silver">Monatsabschluss {monthLabel}</h2>
           <p className="mt-1 text-sm text-zinc-400">
             Diese Fixkosten hat die App automatisch gebucht. Vergleiche sie einmal mit
             deinem Bankkonto — dann stimmt der Kontostand garantiert.
@@ -286,7 +302,7 @@ function MonthEndCheck({ check, onConfirm }) {
         </div>
       </div>
 
-      <ul className="mt-4 space-y-2 border-t border-ink-800 pt-3 text-sm">
+      <ul className="mt-4 space-y-2 border-t border-white/10 pt-3 text-sm">
         {check.items.map((it, i) => (
           <li key={`${it.name}-${it.date}-${i}`} className="flex items-center justify-between gap-3">
             <span className="flex min-w-0 items-baseline gap-2">
@@ -296,20 +312,20 @@ function MonthEndCheck({ check, onConfirm }) {
             <Money value={it.amount} className="shrink-0 tabular-nums text-zinc-300" />
           </li>
         ))}
-        <li className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
-          <span className="text-zinc-100">Gesamt gebucht</span>
-          <Money value={check.total} className="tabular-nums text-zinc-50" />
+        <li className="flex items-center justify-between border-t border-white/10 pt-2.5 font-semibold">
+          <span className="text-silver">Gesamt gebucht</span>
+          <Money value={check.total} className="tabular-nums text-silver" />
         </li>
       </ul>
 
       {check.openCount > 0 && (
-        <p className="mt-3 text-xs text-amber-300">
+        <p className="mt-3 text-xs text-warn">
           {check.openCount === 1
             ? '1 Fixkosten-Abbuchung wurde für diesen Monat nicht gebucht — bitte auf der Fixkosten-Seite prüfen.'
             : `${check.openCount} Fixkosten-Abbuchungen wurden für diesen Monat nicht gebucht — bitte auf der Fixkosten-Seite prüfen.`}
         </p>
       )}
-      {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+      {error && <p className="mt-3 text-sm text-coral">{error}</p>}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <button onClick={confirm} disabled={busy} className="btn-primary">
@@ -321,30 +337,17 @@ function MonthEndCheck({ check, onConfirm }) {
   )
 }
 
-function BreakdownRow({ label, value, tone, linkTo }) {
-  const color = tone === 'pos' ? 'text-green-400' : tone === 'neg' ? 'text-zinc-300' : 'text-zinc-300'
-  return (
-    <div className="flex items-center justify-between text-zinc-400">
-      {linkTo ? (
-        <Link to={linkTo} className="hover:text-accent-soft hover:underline cursor-pointer">{label}</Link>
-      ) : (
-        <span>{label}</span>
-      )}
-      <Money value={value} signed={value < 0} className={`tabular-nums ${color}`} />
-    </div>
-  )
-}
-
 function DashboardSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="mb-6 h-8 w-48 rounded-lg bg-ink-800" />
+      <div className="mb-6 h-8 w-48 rounded-lg bg-ink-800/70" />
+      <div className="mb-5 h-40 rounded-2xl bg-ink-800/70" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-2xl bg-ink-800" />)}
+        {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-2xl bg-ink-800/70" />)}
       </div>
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="h-72 rounded-2xl bg-ink-800 lg:col-span-2" />
-        <div className="h-72 rounded-2xl bg-ink-800" />
+        <div className="h-72 rounded-2xl bg-ink-800/70 lg:col-span-2" />
+        <div className="h-72 rounded-2xl bg-ink-800/70" />
       </div>
     </div>
   )

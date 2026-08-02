@@ -33,8 +33,8 @@ function NavItems({ onNavigate }) {
           className={({ isActive }) =>
             `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200 cursor-pointer ${
               isActive
-                ? 'bg-accent/15 text-white ring-1 ring-inset ring-accent/30'
-                : 'text-zinc-400 hover:bg-ink-800 hover:text-zinc-100'
+                ? 'bg-accent/15 text-white shadow-glow ring-1 ring-inset ring-accent/30'
+                : 'text-zinc-400 hover:bg-ink-800/70 hover:text-zinc-100'
             }`
           }
         >
@@ -57,7 +57,7 @@ export default function Layout({ session }) {
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen flex-col border-r border-ink-800 bg-ink-900/60 p-4 backdrop-blur lg:flex">
+      <aside className="sticky top-0 hidden h-screen flex-col border-r border-white/5 bg-ink-900/50 p-4 backdrop-blur-xl lg:flex">
         <Brand />
         <div className="mt-6 flex-1">
           <NavItems />
@@ -91,51 +91,43 @@ function MobileDock({ onNavigate, onSignOut }) {
 
   return (
     <div className="lg:hidden">
-      {/* Backdrop */}
+      {/* Backdrop — blurs the page content behind the bubble menu */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-ink-950/60 backdrop-blur-md"
           onClick={close}
           aria-hidden="true"
         />
       )}
 
-      {/* Fluid menu — expands upward from the center button */}
+      {/* Bubble menu — glass circles fanning up from the center button */}
       <div
-        className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex flex-col-reverse items-center gap-2.5 px-4"
+        className="pointer-events-none fixed inset-x-0 bottom-32 z-50 grid grid-cols-2 justify-items-center gap-x-8 gap-y-5 px-8"
         aria-hidden={!open}
       >
         {fluidItems.map((item, i) => {
           const Icon = item.icon
-          // No pointer-events here: the items stay mounted while closed (so they
-          // can animate) and would otherwise keep catching taps through their
-          // opacity-0 state — an invisible stack of "Sparen"/"Abmelden" sitting
-          // above the + button. Enabled per item in `anim` only while open.
-          const base =
-            'flex items-center gap-3 rounded-full border py-2.5 pl-2.5 pr-4 shadow-card backdrop-blur-xl transition-all duration-300 will-change-transform'
-          const tone = item.accent
-            ? 'border-accent/40 bg-accent text-white'
-            : item.danger
-              ? 'border-ink-700 bg-ink-800/90 text-zinc-300'
-              : 'border-ink-700 bg-ink-800/90 text-zinc-100'
+          // No pointer-events here: the bubbles stay mounted while closed (so
+          // they can animate) and would otherwise keep catching taps through
+          // their opacity-0 state. Enabled per item in `anim` only while open.
+          const bubble = item.accent
+            ? 'bg-gradient-to-br from-accent to-accent-ring shadow-glow-lg text-white'
+            : 'bg-white/10 shadow-card text-silver'
           const anim = open
-            ? 'pointer-events-auto translate-y-0 opacity-100 scale-100'
-            : 'pointer-events-none translate-y-4 opacity-0 scale-95'
-          const iconWrap = item.accent
-            ? 'bg-white/20 text-white'
-            : item.danger
-              ? 'bg-ink-700 text-bad'
-              : 'bg-ink-700 text-accent'
+            ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none translate-y-6 scale-75 opacity-0'
+          const style = { transitionDelay: `${open ? i * 45 : 0}ms` }
           const content = (
-            <>
-              <span className={`flex h-8 w-8 items-center justify-center rounded-full ${iconWrap}`}>
-                <Icon className="h-4 w-4" />
+            <div className="flex flex-col items-center gap-2">
+              <span
+                className={`flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/15 backdrop-blur-xl transition-transform duration-300 active:scale-95 ${bubble}`}
+              >
+                <Icon className="h-7 w-7" />
               </span>
-              <span className="text-sm font-medium">{item.label}</span>
-            </>
+              <span className="text-xs font-medium text-silver">{item.label}</span>
+            </div>
           )
-          const cls = `${base} ${tone} ${anim}`
-          const style = { transitionDelay: `${open ? i * 40 : 0}ms` }
+          const cls = `transition-all duration-300 ease-out will-change-transform ${anim}`
           return item.to ? (
             <NavLink key={item.key} to={item.to} onClick={close} className={cls} style={style} tabIndex={open ? 0 : -1}>
               {content}
@@ -156,7 +148,7 @@ function MobileDock({ onNavigate, onSignOut }) {
 
       {/* Dock bar */}
       <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
-        <div className="flex items-end gap-1 rounded-[1.7rem] border border-ink-700/80 bg-ink-900/85 px-2 py-1.5 shadow-card backdrop-blur-xl">
+        <div className="flex items-end gap-1 rounded-[1.7rem] border border-white/10 bg-ink-900/75 px-2 py-1.5 shadow-card backdrop-blur-2xl">
           <DockTab tab={DOCK_TABS[0]} />
           <DockTab tab={DOCK_TABS[1]} />
 
@@ -165,7 +157,7 @@ function MobileDock({ onNavigate, onSignOut }) {
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
             aria-expanded={open}
-            className="relative -mt-7 mx-0.5 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-gradient-to-b from-accent-soft to-accent-ring text-white shadow-[0_0_28px_2px_rgba(37,99,235,0.55),0_10px_22px_-6px_rgba(37,99,235,0.65)] ring-4 ring-ink-900 transition-transform duration-200 active:scale-95"
+            className="relative -mt-7 mx-0.5 flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-gradient-to-b from-accent-soft to-accent-ring text-white shadow-[0_0_28px_2px_rgba(157,80,187,0.55),0_10px_22px_-6px_rgba(157,80,187,0.65)] ring-4 ring-ink-900 transition-transform duration-200 active:scale-95"
           >
             <Plus
               className={`absolute h-7 w-7 transition-all duration-300 ${open ? 'rotate-90 scale-0 opacity-0' : 'rotate-0 scale-100 opacity-100'}`}
@@ -198,7 +190,7 @@ function DockTab({ tab }) {
       {({ isActive }) => (
         <>
           {isActive && (
-            <span className="absolute top-0 h-1 w-7 rounded-full bg-accent" />
+            <span className="absolute top-0 h-1 w-7 rounded-full bg-accent shadow-glow" />
           )}
           <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 2} />
           <span className="text-[10px] font-medium leading-none">{label}</span>
@@ -211,18 +203,18 @@ function DockTab({ tab }) {
 function Brand({ compact }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 text-accent">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 text-accent shadow-glow">
         <Wallet className="h-5 w-5" />
       </div>
-      {!compact && <span className="text-lg font-semibold tracking-tight text-zinc-50">Budget</span>}
-      {compact && <span className="text-base font-semibold tracking-tight text-zinc-50">Budget</span>}
+      {!compact && <span className="text-lg font-semibold tracking-tight text-silver">Budget</span>}
+      {compact && <span className="text-base font-semibold tracking-tight text-silver">Budget</span>}
     </div>
   )
 }
 
 function UserFooter({ email, onSignOut }) {
   return (
-    <div className="mt-4 border-t border-ink-800 pt-4">
+    <div className="mt-4 border-t border-white/5 pt-4">
       <div className="mb-2 truncate px-1 text-xs text-zinc-500" title={email}>{email}</div>
       <button onClick={onSignOut} className="btn-ghost w-full justify-start">
         <LogOut className="h-4 w-4" />

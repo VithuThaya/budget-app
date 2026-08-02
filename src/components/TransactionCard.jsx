@@ -24,7 +24,7 @@ export default function TransactionCard({
       role={editTo ? 'button' : undefined}
       tabIndex={editTo ? 0 : undefined}
       onKeyDown={editTo ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(editTo) } } : undefined}
-      className={`group flex items-center gap-3 rounded-xl border border-ink-800 bg-ink-850/60 px-3.5 py-3 transition-colors duration-200 hover:border-ink-700 hover:bg-ink-800/70 ${editTo ? 'cursor-pointer' : ''}`}
+      className={`group flex items-center gap-3 rounded-xl border border-white/5 bg-ink-850/50 px-3.5 py-3 backdrop-blur-md transition-all duration-200 hover:border-white/10 hover:bg-ink-800/60 active:scale-[0.99] ${editTo ? 'cursor-pointer' : ''}`}
     >
       <span
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"

@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-08-02T14:56:42.412Z",
+        "reason": "User confirmed Inter is intentional (Stitch redesign plan, AskUserQuestion round 4)"
+      }
+    ]
+  }
+}
