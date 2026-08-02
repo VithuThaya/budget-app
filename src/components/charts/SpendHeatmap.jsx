@@ -72,8 +72,8 @@ export default function SpendHeatmap({ year, dailyTotals }) {
 }
 
 function cellColor(amount, max) {
-  if (amount <= 0) return '#1c1c20' // ink-800
+  if (amount <= 0) return '#1E2338' // ink-800
   const ratio = max > 0 ? amount / max : 0
   const alpha = ratio > 0.75 ? 'ff' : ratio > 0.5 ? 'b3' : ratio > 0.25 ? '80' : '40'
-  return `#2563eb${alpha}`
+  return `#9D50BB${alpha}`
 }

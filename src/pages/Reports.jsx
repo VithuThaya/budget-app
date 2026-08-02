@@ -87,14 +87,19 @@ export default function Reports() {
 
 // ---------------------------------------------------------------------------
 function TabSwitcher({ tab, setTab }) {
+  const idx = TABS.findIndex((t) => t.id === tab)
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
+    <div className="relative flex items-center gap-1 rounded-xl border border-white/10 bg-ink-900/60 p-1 backdrop-blur-md">
+      <div
+        className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-accent to-accent-soft shadow-glow transition-transform duration-300 ease-out"
+        style={{ width: `calc(${100 / TABS.length}% - 0.166rem)`, transform: `translateX(calc(${idx * 100}% + ${idx * 0.166}rem))` }}
+      />
       {TABS.map((t) => (
         <button
           key={t.id}
           onClick={() => setTab(t.id)}
-          className={`cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium ${
-            tab === t.id ? 'bg-accent text-white' : 'text-zinc-400 hover:bg-ink-800 hover:text-zinc-100'
+          className={`relative z-10 cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+            tab === t.id ? 'text-white' : 'text-zinc-400 hover:text-zinc-100'
           }`}
         >
           {t.label}
@@ -133,7 +138,7 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
 
       {/* Wohin floss dein Geld */}
       <section className="card p-5">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
           <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Wohin floss dein Geld
         </h2>
         <AllocationBar fixed={fixedDueMonth} variable={variableSpend} saved={savedMonth} />
@@ -154,13 +159,13 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
       {/* Pie + trend */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="card p-5">
-          <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
             <PieChart className="h-[18px] w-[18px] text-accent-soft" /> Ausgaben nach Kategorie
           </h2>
           <PieBreakdown data={pie} />
         </section>
         <section className="card p-5">
-          <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
             <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Täglicher Verlauf — {monthLabel}
           </h2>
           <TrendLine data={trend} />
@@ -169,7 +174,7 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
 
       {/* Weekly bars — trailing 8 weeks live, or the selected past month's own weeks */}
       <section className="card p-5">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
           <BarChart3 className="h-[18px] w-[18px] text-accent-soft" />
           {isCurrent ? 'Wochenvergleich (8 Wochen)' : `Wochenverlauf — ${monthLabel}`}
         </h2>
@@ -179,10 +184,10 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
       {/* Savings potential */}
       <section className="card p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+          <h2 className="flex items-center gap-2 font-semibold text-silver">
             <PiggyBank className="h-[18px] w-[18px] text-accent-soft" /> Sparpotenzial
           </h2>
-          <span className="chip bg-good/10 text-green-300">
+          <span className="chip bg-good/15 text-good">
             Bis zu <Money value={potential.totalSaving} className="ml-1" /> / Mt.
           </span>
         </div>
@@ -194,7 +199,7 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
           <>
             <p className="mb-4 text-sm text-zinc-400">
               Wenn du flexible Kategorien {isCurrent ? 'diesen Monat' : `im ${monthLabel}`} kürzt, könntest du etwa{' '}
-              <span className="font-semibold text-green-300">{formatCHF(potential.totalSaving)}</span>{' '}
+              <span className="font-semibold text-good">{formatCHF(potential.totalSaving)}</span>{' '}
               sparen ({formatPct(potential.pctOfSpend)} deiner Ausgaben).
             </p>
             <div className="space-y-4">
@@ -205,7 +210,7 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
                       <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: it.color }} />
                       <span className="truncate text-sm text-zinc-300">{it.name}</span>
                     </span>
-                    <span className="shrink-0 text-xs font-medium text-green-300">spare <Money value={it.saving} /></span>
+                    <span className="shrink-0 text-xs font-medium text-good">spare <Money value={it.saving} /></span>
                   </div>
                   <div className="mt-1.5 flex items-center gap-3">
                     <div className="flex-1"><ProgressBar ratio={it.suggested / it.current} color={it.color} /></div>
@@ -222,7 +227,7 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
 
       {/* Saving plans */}
       <section className="card p-5">
-        <h2 className="mb-1 flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="mb-1 flex items-center gap-2 font-semibold text-silver">
           <Sparkles className="h-[18px] w-[18px] text-accent-soft" /> Sparplan-Generator
         </h2>
         <p className="mb-4 text-sm text-zinc-400">
@@ -243,22 +248,22 @@ function MonthTab({ cursor, setCursor, isCurrent, expenses, incomes, fixedCosts,
 
 function MonthSwitcher({ cursor, setCursor, isCurrent }) {
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
+    <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-ink-900/60 p-1 backdrop-blur-md">
       <button
         onClick={() => setCursor((c) => addMonths(c, -1))}
         aria-label="Vorheriger Monat"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 cursor-pointer"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800/60 hover:text-silver cursor-pointer"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-      <span className="min-w-[7.5rem] px-2 text-center text-sm font-medium text-zinc-100">
+      <span className="min-w-[7.5rem] px-2 text-center text-sm font-medium text-silver">
         {formatMonthLabel(cursor)}
       </span>
       <button
         onClick={() => setCursor((c) => addMonths(c, 1))}
         disabled={isCurrent}
         aria-label="Nächster Monat"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800/60 hover:text-silver disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -274,15 +279,19 @@ function AllocationBar({ fixed, variable, saved }) {
     return <p className="text-sm text-zinc-500">Noch keine Bewegungen in diesem Monat.</p>
   }
   const segments = [
-    { key: 'fixed', label: 'Fixkosten', value: fixed, color: '#f59e0b' },
-    { key: 'variable', label: 'Variabel', value: variable, color: '#2563eb' },
-    { key: 'saved', label: 'Gespart', value: saved, color: '#22c55e' },
+    { key: 'fixed', label: 'Fixkosten', value: fixed, color: '#F5B942' },
+    { key: 'variable', label: 'Variabel', value: variable, color: '#9D50BB' },
+    { key: 'saved', label: 'Gespart', value: saved, color: '#34D399' },
   ]
   return (
     <div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-ink-800">
+      <div className="flex h-3 w-full gap-1">
         {segments.map((s) => s.value > 0 && (
-          <div key={s.key} style={{ width: `${(s.value / total) * 100}%`, backgroundColor: s.color }} />
+          <div
+            key={s.key}
+            className="rounded-full"
+            style={{ width: `${(s.value / total) * 100}%`, backgroundColor: s.color, boxShadow: `0 0 8px -1px ${s.color}99` }}
+          />
         ))}
       </div>
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -291,7 +300,7 @@ function AllocationBar({ fixed, variable, saved }) {
             <span className="flex items-center gap-1.5 text-xs text-zinc-400">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: s.color }} /> {s.label}
             </span>
-            <p className="mt-0.5 truncate font-semibold text-zinc-100"><Money value={s.value} /></p>
+            <p className="mt-0.5 truncate font-semibold text-silver"><Money value={s.value} /></p>
             <p className="text-xs text-zinc-500">{formatPct(s.value / total)}</p>
           </div>
         ))}
@@ -328,28 +337,28 @@ function YearTab({ year, setYear, isCurrentYear, expenses, incomes, fixedCosts, 
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Einnahmen" value={totalIncome} icon={TrendingUp} accent="#22c55e" />
-        <StatCard label="Ausgaben" value={totalExpense} icon={TrendingDown} accent="#ef4444" />
-        <StatCard label="Fixkosten" value={totalFixed} icon={Landmark} accent="#f59e0b" />
-        <RatioCard label="Sparquote" ratio={savingsRate} icon={PiggyBank} accent="#22c55e" />
+        <StatCard label="Einnahmen" value={totalIncome} icon={TrendingUp} accent="#34D399" />
+        <StatCard label="Ausgaben" value={totalExpense} icon={TrendingDown} accent="#FF6B7A" />
+        <StatCard label="Fixkosten" value={totalFixed} icon={Landmark} accent="#F5B942" />
+        <RatioCard label="Sparquote" ratio={savingsRate} icon={PiggyBank} accent="#34D399" />
       </div>
 
       <section className="card p-5">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
           <BarChart3 className="h-[18px] w-[18px] text-accent-soft" /> Einnahmen vs. Ausgaben
         </h2>
         <MonthlyBars data={series} />
       </section>
 
       <section className="card p-5">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
           <LineChart className="h-[18px] w-[18px] text-accent-soft" /> Kategorien im Jahresverlauf
         </h2>
         <CategoryTrend data={catData} series={catSeries} />
       </section>
 
       <section className="card p-5">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
           <CalendarRange className="h-[18px] w-[18px] text-accent-soft" /> Ausgabentage {year}
         </h2>
         <SpendHeatmap year={year} dailyTotals={dailyTotals} />
@@ -360,20 +369,20 @@ function YearTab({ year, setYear, isCurrentYear, expenses, incomes, fixedCosts, 
 
 function YearSwitcher({ year, setYear, isCurrentYear }) {
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-ink-700 bg-ink-900 p-1">
+    <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-ink-900/60 p-1 backdrop-blur-md">
       <button
         onClick={() => setYear((y) => y - 1)}
         aria-label="Vorheriges Jahr"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 cursor-pointer"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800/60 hover:text-silver cursor-pointer"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-      <span className="min-w-[4rem] px-2 text-center text-sm font-medium text-zinc-100">{year}</span>
+      <span className="min-w-[4rem] px-2 text-center text-sm font-medium text-silver">{year}</span>
       <button
         onClick={() => setYear((y) => y + 1)}
         disabled={isCurrentYear}
         aria-label="Nächstes Jahr"
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
+        className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-300 hover:bg-ink-800/60 hover:text-silver disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -382,9 +391,9 @@ function YearSwitcher({ year, setYear, isCurrentYear }) {
 }
 
 // Same visual language as StatCard, but for a percentage instead of a CHF value.
-function RatioCard({ label, ratio, icon: Icon, accent = '#2563eb' }) {
+function RatioCard({ label, ratio, icon: Icon, accent = '#9D50BB' }) {
   return (
-    <div className="card p-4 sm:p-5">
+    <div className="card card-float p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <span className="stat-label">{label}</span>
         {Icon && (
@@ -393,7 +402,7 @@ function RatioCard({ label, ratio, icon: Icon, accent = '#2563eb' }) {
           </span>
         )}
       </div>
-      <div className="mt-2.5 truncate text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
+      <div className="mt-2.5 truncate text-xl font-semibold tracking-tight text-silver sm:text-2xl">
         {ratio != null ? formatPct(ratio) : '—'}
       </div>
     </div>
@@ -410,7 +419,7 @@ function AdvisorTab({ expenses, incomes, fixedCosts, budgets, categoryMap }) {
   )
   return (
     <section className="card p-5">
-      <h2 className="mb-4 flex items-center gap-2 font-semibold text-zinc-100">
+      <h2 className="mb-4 flex items-center gap-2 font-semibold text-silver">
         <Lightbulb className="h-[18px] w-[18px] text-accent-soft" /> Dein Berater
       </h2>
       <div className="space-y-3">
@@ -432,13 +441,13 @@ function ComparisonCard({ title, icon: Icon, current, previous }) {
       <div className="flex items-center justify-between">
         <span className="stat-label flex items-center gap-1.5"><Icon className="h-4 w-4" /> {title}</span>
         {pct !== null && (
-          <span className={`chip ${up ? 'bg-bad/10 text-red-300' : 'bg-good/10 text-green-300'}`}>
+          <span className={`chip ${up ? 'bg-bad/15 text-bad' : 'bg-good/15 text-good'}`}>
             {up ? '▲' : '▼'} {formatPct(Math.abs(pct))}
           </span>
         )}
       </div>
       <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-        <span className="text-2xl font-semibold text-zinc-50"><Money value={current} /></span>
+        <span className="text-2xl font-semibold text-silver"><Money value={current} /></span>
         <span className="pb-1 text-xs text-zinc-500">vs. <Money value={previous} /> zuvor</span>
       </div>
     </div>
@@ -448,17 +457,17 @@ function ComparisonCard({ title, icon: Icon, current, previous }) {
 function PlanCard({ title, plan }) {
   if (!plan.lines.length) {
     return (
-      <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4">
+      <div className="rounded-xl border border-white/10 bg-ink-900/40 p-4 backdrop-blur-md">
         <h3 className="font-medium text-zinc-200">{title}</h3>
         <p className="mt-2 text-sm text-zinc-500">Noch nicht genug Ausgaben-Historie.</p>
       </div>
     )
   }
   return (
-    <div className="rounded-xl border border-ink-700 bg-ink-900/50 p-4">
+    <div className="rounded-xl border border-white/10 bg-ink-900/40 p-4 backdrop-blur-md">
       <div className="flex items-center justify-between">
         <h3 className="font-medium text-zinc-200">{title}</h3>
-        <span className="chip bg-good/10 text-green-300">spare <Money value={plan.projectedSavings} /></span>
+        <span className="chip bg-good/15 text-good">spare <Money value={plan.projectedSavings} /></span>
       </div>
       <p className="mt-1 text-xs text-zinc-500">
         Zielausgabe <Money value={plan.projectedSpend} /> statt <Money value={plan.baselineSpend} /> beim aktuellen Tempo
@@ -474,7 +483,7 @@ function PlanCard({ title, plan }) {
                 <span className="block tabular-nums text-zinc-400">
                   Limit <span className="font-medium text-zinc-200"><Money value={l.cap} /></span>
                 </span>
-                <span className="block text-amber-300">
+                <span className="block text-warn">
                   −{Math.round(l.reductionPct * 100)}% (<Money value={l.saving} />)
                 </span>
               </span>
@@ -496,7 +505,7 @@ function MonthlyStory({ story, cursor }) {
     try {
       const dataUrl = await toPng(ref.current, {
         pixelRatio: 2,
-        backgroundColor: '#0f0f12',
+        backgroundColor: '#0F1020',
         cacheBust: true,
       })
       const link = document.createElement('a')
@@ -514,7 +523,7 @@ function MonthlyStory({ story, cursor }) {
   return (
     <section className="card p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
+        <h2 className="flex items-center gap-2 font-semibold text-silver">
           <Trophy className="h-[18px] w-[18px] text-accent-soft" /> Monatliche Finanz-Story
         </h2>
         <button onClick={exportPng} disabled={busy} className="btn-ghost">
@@ -522,16 +531,17 @@ function MonthlyStory({ story, cursor }) {
         </button>
       </div>
 
-      {/* Infographic (also the export target) */}
-      <div ref={ref} className="overflow-hidden rounded-2xl border border-ink-700 bg-gradient-to-br from-ink-900 to-ink-850 p-6">
+      {/* Infographic (also the export target — no backdrop-blur here, html-to-image
+          can't render it and the PNG export would break silently) */}
+      <div ref={ref} className="card-solid overflow-hidden bg-aurora p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-accent-soft">Monats-Story</p>
-            <h3 className="text-xl font-semibold text-zinc-50">{formatMonthLabel(cursor)}</h3>
+            <h3 className="text-xl font-semibold text-silver">{formatMonthLabel(cursor)}</h3>
           </div>
           <div className="text-right">
             <p className="stat-label">Netto</p>
-            <p className={`text-lg font-semibold ${story.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-lg font-semibold ${story.net >= 0 ? 'text-good' : 'text-bad'}`}>
               <Money value={story.net} signed />
             </p>
           </div>
@@ -545,22 +555,22 @@ function MonthlyStory({ story, cursor }) {
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <HighlightRow icon={TrendingDown} tint="#ef4444"
+          <HighlightRow icon={TrendingDown} tint="#FF6B7A"
             label="Teuerster Tag"
             value={story.topDay ? `${story.topDay.label}` : '—'}
             sub={story.topDay ? formatCHF(story.topDay.amount) : ''} />
-          <HighlightRow icon={CalendarCheck} tint="#22c55e"
+          <HighlightRow icon={CalendarCheck} tint="#34D399"
             label={story.bestSavingDay ? 'Bester Spartag' : 'Ausgabenfreie Tage'}
             value={story.bestSavingDay ? story.bestSavingDay.label : `${story.noSpendDays} Tage`}
             sub={story.bestSavingDay ? formatCHF(story.bestSavingDay.amount) : 'Keine Ausgaben'} />
         </div>
 
         {story.topCategory && (
-          <div className="mt-3 rounded-xl border border-ink-700 bg-ink-900/60 p-3">
+          <div className="mt-3 rounded-xl border border-white/10 bg-ink-900/50 p-3">
             <p className="stat-label">Größte Kategorie</p>
             <div className="mt-1.5 flex items-center gap-2">
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: story.topCategory.color }} />
-              <span className="font-medium text-zinc-100">{story.topCategory.name}</span>
+              <span className="font-medium text-silver">{story.topCategory.name}</span>
               <span className="ml-auto font-semibold text-zinc-200">{formatCHF(story.topCategory.value)}</span>
             </div>
           </div>
@@ -578,22 +588,22 @@ function MonthlyStory({ story, cursor }) {
 
 function StoryStat({ label, value }) {
   return (
-    <div className="rounded-xl border border-ink-700 bg-ink-900/60 p-3">
+    <div className="rounded-xl border border-white/10 bg-ink-900/50 p-3">
       <p className="stat-label">{label}</p>
-      <p className="mt-1 text-base font-semibold text-zinc-50">{value}</p>
+      <p className="mt-1 text-base font-semibold text-silver">{value}</p>
     </div>
   )
 }
 
 function HighlightRow({ icon: Icon, tint, label, value, sub }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-ink-700 bg-ink-900/60 p-3">
+    <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-ink-900/50 p-3">
       <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${tint}22`, color: tint }}>
         <Icon className="h-5 w-5" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="stat-label">{label}</p>
-        <p className="truncate font-medium text-zinc-100">{value}</p>
+        <p className="truncate font-medium text-silver">{value}</p>
         {sub && <p className="truncate text-xs text-zinc-500">{sub}</p>}
       </div>
     </div>

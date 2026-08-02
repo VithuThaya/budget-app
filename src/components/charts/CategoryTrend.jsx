@@ -29,9 +29,9 @@ export default function CategoryTrend({ data, series, height = 280 }) {
           ))}
         </LineChart>
       </ResponsiveContainer>
-      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-xs text-zinc-400">
         {series.map((s) => (
-          <span key={s.key} className="flex items-center gap-1.5">
+          <span key={s.key} className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur-md">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} /> {s.name}
           </span>
         ))}

@@ -17,19 +17,27 @@ export default function TrendLine({ data }) {
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2563eb" stopOpacity={0.45} />
-              <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+              <stop offset="0%" stopColor="#9D50BB" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#9D50BB" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="trendStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#34D399" />
+              <stop offset="100%" stopColor="#B57BD6" />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
           <XAxis dataKey="label" tick={{ fill: '#71717a', fontSize: 11 }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={24} />
           <YAxis tick={{ fill: '#71717a', fontSize: 11 }} tickLine={false} axisLine={false} width={40}
             tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toLocaleString('de-CH', { maximumFractionDigits: 1 })}k` : String(v))} />
           <Tooltip
-            contentStyle={{ background: '#161619', border: '1px solid #27272a', borderRadius: 12, color: '#fafafa' }}
+            contentStyle={{ background: 'rgba(22,26,46,0.92)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#E0E0E0', backdropFilter: 'blur(12px)' }}
             formatter={(v) => [formatCHF(v), 'Ausgegeben']}
           />
-          <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} fill="url(#trendFill)" />
+          <Area
+            type="monotone" dataKey="total" stroke="url(#trendStroke)" strokeWidth={2.5}
+            fill="url(#trendFill)" dot={{ r: 3, fill: '#B57BD6', strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#9D50BB', stroke: '#0F1020', strokeWidth: 2 }}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>

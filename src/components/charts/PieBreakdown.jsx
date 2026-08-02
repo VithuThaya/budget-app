@@ -36,7 +36,7 @@ export default function PieBreakdown({ data }) {
           <li key={d.categoryId ?? d.name} className="flex items-center justify-between gap-2 text-sm">
             <span className="flex min-w-0 items-center gap-2">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: d.color }} />
-              <span className="truncate text-zinc-300">{d.name}</span>
+              <span className="truncate text-silver">{d.name}</span>
             </span>
             <span className="shrink-0 tabular-nums text-zinc-400">
               {Math.round((d.value / total) * 100)}%
