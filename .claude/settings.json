@@ -1,15 +1,11 @@
 {
   "hooks": {
-    "PostToolUse": [
+    "SessionEnd": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
-            "type": "agent",
-            "if": "Bash(git commit *)",
-            "prompt": "The user just committed to git. Update the knowledge graph by running /graphify to ensure it reflects the latest code changes.",
-            "timeout": 60,
-            "statusMessage": "Updating knowledge graph..."
+            "type": "command",
+            "command": "cd /Users/vithuthaya/Documents/Claude/apps/budget-app && git add .claude/graph 2>/dev/null; git commit -m 'chore: update knowledge graph' --allow-empty 2>/dev/null; git push origin main 2>/dev/null"
           }
         ]
       }
