@@ -285,13 +285,13 @@ function AllocationBar({ fixed, variable, saved }) {
           <div key={s.key} style={{ width: `${(s.value / total) * 100}%`, backgroundColor: s.color }} />
         ))}
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-3">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {segments.map((s) => (
           <div key={s.key}>
             <span className="flex items-center gap-1.5 text-xs text-zinc-400">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: s.color }} /> {s.label}
             </span>
-            <p className="mt-0.5 font-semibold text-zinc-100"><Money value={s.value} /></p>
+            <p className="mt-0.5 truncate font-semibold text-zinc-100"><Money value={s.value} /></p>
             <p className="text-xs text-zinc-500">{formatPct(s.value / total)}</p>
           </div>
         ))}

@@ -158,29 +158,6 @@ export default function Dashboard() {
         <StatCard label={leftToSpend >= 0 ? 'Übrig zum Ausgeben' : 'Über Budget'} value={leftToSpend} icon={Wallet} accent="#2563eb" />
       </div>
 
-      {/* End-of-month "left to spend": carry-over + this month's flows */}
-      <section className="card mt-5 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-semibold text-zinc-100">
-            <Wallet className="h-[18px] w-[18px] text-accent-soft" /> Übrig zum Ausgeben
-          </h2>
-          <span className="text-xs text-zinc-500">Ende {formatMonthLabel()}</span>
-        </div>
-        <div className="space-y-2.5 text-sm">
-          <BreakdownRow label="Übertrag Vormonat" value={carryover} tone={carryover >= 0 ? 'pos' : 'neg'} />
-          <BreakdownRow label="Einnahmen diesen Monat" value={incomeMonth} tone="pos" />
-          <BreakdownRow label="Fixkosten diesen Monat" value={-fixedDueMonth} tone="neg" linkTo="/fixed-costs" />
-          <BreakdownRow label="Ausgaben diesen Monat" value={-spentMonth} tone="neg" />
-          {savedMonth > 0 && <BreakdownRow label="Diesen Monat gespart" value={-savedMonth} tone="neg" linkTo="/savings" />}
-          <div className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
-            <span className="text-zinc-100">Übrig zum Ausgeben</span>
-            <Money value={leftToSpend} className={`text-lg font-bold ${leftToSpend >= 0 ? 'text-green-400' : 'text-red-300'}`} />
-          </div>
-        </div>
-        <p className="mt-3 text-xs text-zinc-500">
-          Was rechnerisch bis Monatsende übrig bleibt, wenn keine weiteren Einnahmen dazukommen — inkl. Übertrag aus dem Vormonat.
-        </p>
-      </section>
 
       {/* Advisor + weekly */}
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
