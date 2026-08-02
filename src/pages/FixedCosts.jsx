@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, Loader2, Trash2, CalendarClock, Power, Check } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Plus, Loader2, Trash2, CalendarClock, Power, Check, Pencil } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import PageHeader from '../components/PageHeader'
 import EmptyState from '../components/EmptyState'
@@ -26,14 +26,9 @@ const labelFor = (period) => PERIODS.find((p) => p.value === period)?.label || p
 
 export default function FixedCosts() {
   const { fixedCosts, addFixedCost, updateFixedCost, deleteFixedCost } = useData()
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [amount, setAmount] = useState('')
-  const [period, setPeriod] = useState('monthly')
-  const [dueDay, setDueDay] = useState('')
-  const [notes, setNotes] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(null)
+  // null = closed, 'new' = the add form, otherwise the id being edited. One form
+  // is open at a time, so the add form and an inline edit can share a component.
+  const [editing, setEditing] = useState(null)
 
   const monthlyTotal = monthlyFixedTotal(fixedCosts)
   const yearlyTotal = monthlyTotal * 12
@@ -50,36 +45,21 @@ export default function FixedCosts() {
     updateFixedCost(fc.id, { payments: next })
   }
 
-  async function handleAdd(e) {
-    e.preventDefault()
-    const value = parseAmount(amount)
-    if (!name.trim()) return setError('Gib einen Namen an (z. B. Miete, Krankenkasse).')
-    if (value <= 0) return setError('Gib einen Betrag größer als null ein.')
-    setBusy(true)
-    setError(null)
-    try {
-      const day = dueDay ? Math.min(31, Math.max(1, parseInt(dueDay, 10))) : null
-      await addFixedCost({
-        name: name.trim(),
-        amount: value,
-        period,
-        due_day: Number.isNaN(day) ? null : day,
-        payments: [],
-        active: true,
-        notes: notes.trim() || null,
-      })
-      setName(''); setAmount(''); setPeriod('monthly'); setDueDay(''); setNotes(''); setOpen(false)
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setBusy(false)
-    }
+  // Editing deliberately writes only the planning fields. `payments` stays
+  // untouched: a rent increase must not rewrite months already debited at the
+  // old amount, and a changed due_day only affects bookings from here on.
+  async function handleSave(values) {
+    if (editing === 'new') await addFixedCost({ ...values, payments: [], active: true })
+    else await updateFixedCost(editing, values)
+    setEditing(null)
   }
 
   return (
     <div>
       <PageHeader title="Fixkosten" subtitle="Wiederkehrende Verpflichtungen, die vom Einkommen abgezogen werden — so siehst du, was zum Ausgeben bleibt.">
-        <button onClick={() => setOpen((v) => !v)} className="btn-primary"><Plus className="h-4 w-4" /> Fixkosten hinzufügen</button>
+        <button onClick={() => setEditing((v) => (v === 'new' ? null : 'new'))} className="btn-primary">
+          <Plus className="h-4 w-4" /> Fixkosten hinzufügen
+        </button>
       </PageHeader>
 
       <div className="mb-5 grid grid-cols-2 gap-3">
@@ -93,60 +73,9 @@ export default function FixedCosts() {
         </div>
       </div>
 
-      {open && (
-        <form onSubmit={handleAdd} className="card mb-5 space-y-4 p-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="fc-name" className="label">Name</label>
-              <input id="fc-name" className="input" placeholder="Miete, Krankenkasse…" value={name}
-                onChange={(e) => setName(e.target.value)} autoFocus />
-            </div>
-            <div>
-              <label htmlFor="fc-amount" className="label">Betrag (CHF)</label>
-              <input id="fc-amount" inputMode="decimal" className="input" placeholder="0.00" value={amount}
-                onChange={(e) => setAmount(e.target.value)} />
-            </div>
-            <div className="sm:col-span-2">
-              <span className="label">Zeitraum</span>
-              <div className="flex rounded-xl border border-ink-700 bg-ink-900 p-1">
-                {PERIODS.map((o) => (
-                  <button key={o.value} type="button" onClick={() => setPeriod(o.value)}
-                    className={`flex-1 rounded-lg px-2 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                      period === o.value ? 'bg-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
-                    }`}>
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="fc-due-day" className="label">Abbuchungstag (optional)</label>
-              <input id="fc-due-day" inputMode="numeric" className="input" placeholder="z. B. 1 oder 25"
-                value={dueDay} onChange={(e) => setDueDay(e.target.value.replace(/\D/g, '').slice(0, 2))} />
-              <p className="mt-1.5 text-xs text-zinc-400">
-                Mit Tag bucht die App automatisch. Fällt der Tag auf ein Wochenende, wird
-                — wie beim Dauerauftrag — am Freitag davor abgebucht. Ohne Tag hakst du weiter selbst ab.
-              </p>
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="fc-notes" className="label">Notiz (optional)</label>
-              <input id="fc-notes" className="input" placeholder="Anbieter, Vertragsende…" value={notes}
-                onChange={(e) => setNotes(e.target.value)} />
-            </div>
-          </div>
-          {amount && parseAmount(amount) > 0 && period !== 'monthly' && (
-            <p className="text-xs text-zinc-400">
-              ≈ {formatCHF(monthlyFixedCost({ amount: parseAmount(amount), period }))} pro Monat
-            </p>
-          )}
-          {error && <p className="text-sm text-red-300">{error}</p>}
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="btn-ghost">Abbrechen</button>
-            <button type="submit" disabled={busy} className="btn-primary">
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Fixkosten hinzufügen
-            </button>
-          </div>
-        </form>
+      {editing === 'new' && (
+        <FixedCostForm className="card mb-5 space-y-4 p-5" submitLabel="Fixkosten hinzufügen"
+          onSubmit={handleSave} onCancel={() => setEditing(null)} />
       )}
 
       {fixedCosts.length === 0 ? (
@@ -206,6 +135,13 @@ export default function FixedCosts() {
                       <Check className="h-4 w-4" /> {paidThisMonth ? 'Bezahlt' : 'Als bezahlt'}
                     </button>
                   )}
+                  <button onClick={() => setEditing((v) => (v === fc.id ? null : fc.id))}
+                    aria-label="Fixkosten bearbeiten" title="Name, Betrag, Zeitraum oder Abbuchungstag ändern"
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 cursor-pointer ${
+                      editing === fc.id ? 'bg-accent/15 text-accent-soft' : 'text-zinc-400 hover:bg-ink-800 hover:text-accent-soft'
+                    }`}>
+                    <Pencil className="h-4 w-4" />
+                  </button>
                   <button onClick={() => updateFixedCost(fc.id, { active: inactive })}
                     aria-label={inactive ? 'Fixkosten fortsetzen' : 'Fixkosten pausieren'}
                     title={inactive ? 'Fortsetzen (wieder zählen)' : 'Pausieren (nicht mehr zählen)'}
@@ -219,11 +155,122 @@ export default function FixedCosts() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
+
+                {editing === fc.id && (
+                  <FixedCostForm className="mt-3 space-y-4 border-t border-ink-800 pt-4" initial={fc}
+                    submitLabel="Änderungen speichern" onSubmit={handleSave} onCancel={() => setEditing(null)} />
+                )}
               </div>
             )
           })}
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Add/edit form for one fixed cost. Shared by the "add" card at the top and the
+ * inline editor on a row — the editor sits next to the cost being changed, which
+ * matters on a phone where a form at the top of a long list is off-screen.
+ * Only ever one instance is mounted, but ids are still scoped via useId so a
+ * label can never point at the wrong field.
+ * `payments` is not a form field on purpose: recorded debits are history.
+ */
+function FixedCostForm({ initial, submitLabel, onSubmit, onCancel, className }) {
+  const uid = useId()
+  const [name, setName] = useState(initial?.name ?? '')
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : '')
+  const [period, setPeriod] = useState(initial?.period ?? 'monthly')
+  const [dueDay, setDueDay] = useState(initial?.due_day ? String(initial.due_day) : '')
+  const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  const paidCount = (initial?.payments || []).length
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    const value = parseAmount(amount)
+    if (!name.trim()) return setError('Gib einen Namen an (z. B. Miete, Krankenkasse).')
+    if (value <= 0) return setError('Gib einen Betrag größer als null ein.')
+    setBusy(true)
+    setError(null)
+    try {
+      const day = dueDay ? Math.min(31, Math.max(1, parseInt(dueDay, 10))) : null
+      await onSubmit({
+        name: name.trim(),
+        amount: value,
+        period,
+        due_day: Number.isNaN(day) ? null : day,
+        notes: notes.trim() || null,
+      })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className={className}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor={`${uid}-name`} className="label">Name</label>
+          <input id={`${uid}-name`} className="input" placeholder="Miete, Krankenkasse…" value={name}
+            onChange={(e) => setName(e.target.value)} autoFocus />
+        </div>
+        <div>
+          <label htmlFor={`${uid}-amount`} className="label">Betrag (CHF)</label>
+          <input id={`${uid}-amount`} inputMode="decimal" className="input" placeholder="0.00" value={amount}
+            onChange={(e) => setAmount(e.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <span className="label">Zeitraum</span>
+          <div className="flex rounded-xl border border-ink-700 bg-ink-900 p-1">
+            {PERIODS.map((o) => (
+              <button key={o.value} type="button" onClick={() => setPeriod(o.value)}
+                className={`flex-1 rounded-lg px-2 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
+                  period === o.value ? 'bg-accent text-white' : 'text-zinc-400 hover:text-zinc-200'
+                }`}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor={`${uid}-due-day`} className="label">Abbuchungstag (optional)</label>
+          <input id={`${uid}-due-day`} inputMode="numeric" className="input" placeholder="z. B. 1 oder 25"
+            value={dueDay} onChange={(e) => setDueDay(e.target.value.replace(/\D/g, '').slice(0, 2))} />
+          <p className="mt-1.5 text-xs text-zinc-400">
+            Mit Tag bucht die App automatisch. Fällt der Tag auf ein Wochenende, wird
+            — wie beim Dauerauftrag — am Freitag davor abgebucht. Ohne Tag hakst du weiter selbst ab.
+          </p>
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor={`${uid}-notes`} className="label">Notiz (optional)</label>
+          <input id={`${uid}-notes`} className="input" placeholder="Anbieter, Vertragsende…" value={notes}
+            onChange={(e) => setNotes(e.target.value)} />
+        </div>
+      </div>
+      {amount && parseAmount(amount) > 0 && period !== 'monthly' && (
+        <p className="text-xs text-zinc-400">
+          ≈ {formatCHF(monthlyFixedCost({ amount: parseAmount(amount), period }))} pro Monat
+        </p>
+      )}
+      {paidCount > 0 && (
+        <p className="text-xs text-zinc-500">
+          Bereits gebuchte Abbuchungen bleiben unverändert — ein neuer Betrag gilt erst ab der
+          nächsten Buchung, dein Kontostand ändert sich also nicht rückwirkend.
+        </p>
+      )}
+      {error && <p className="text-sm text-red-300">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="btn-ghost">Abbrechen</button>
+        <button type="submit" disabled={busy} className="btn-primary">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} {submitLabel}
+        </button>
+      </div>
+    </form>
   )
 }

@@ -8,7 +8,7 @@
 // derive-from-raw-array approach. A cost without `due_day` stays manual.
 // Explicit .js extension (the rest of the app omits it): this module is also run
 // directly by node for fixedSchedule.check.js, and node requires the extension.
-import { parseISO, toISODate, addDays } from '../lib/dates.js'
+import { parseISO, toISODate, addDays, addMonths } from '../lib/dates.js'
 
 // How many months apart each period recurs. 'weekly' is handled separately
 // (it recurs in days, not months).
@@ -141,4 +141,51 @@ export function nextDueDate(fc, todayISO) {
     if (!lastPaid && shifted >= todayISO) return shifted
   }
   return null
+}
+
+// How many days into the new month the closing check stays offered. After that
+// the month is water under the bridge and the banner would only be noise.
+const CHECK_WINDOW_DAYS = 5
+
+/** The month whose closing check is due right now, or null outside the window.
+ *  Offered on the last day of a month and in the first few days of the next —
+ *  both point at the SAME month, so the prompt does not change under the user. */
+export function checkableMonth(today) {
+  const d = parseISO(today)
+  const lastDay = toISODate(new Date(d.getFullYear(), d.getMonth() + 1, 0))
+  if (today === lastDay) return today.slice(0, 7)
+  if (d.getDate() <= CHECK_WINDOW_DAYS) return toISODate(addMonths(d, -1)).slice(0, 7)
+  return null
+}
+
+/** Month-end reconciliation prompt: what the app booked by itself for the month
+ *  now closing, so it can be held against the real bank statement.
+ *  Null when there is nothing to confirm — outside the window, already confirmed,
+ *  or nothing was booked automatically.
+ *  @returns {null | { month: string, items: Array, total: number, openCount: number }} */
+export function monthEndCheck(fixedCosts, today, confirmedMonth = null) {
+  const month = checkableMonth(today)
+  if (!month || month === confirmedMonth) return null
+
+  const items = []
+  for (const fc of fixedCosts || []) {
+    for (const p of fc.payments || []) {
+      // Instalment month, not debit month: a 1 Aug due day debits on 31 Jul but
+      // belongs to August, and must not show up in July's closing check.
+      if ((p.for || String(p.date).slice(0, 7)) !== month) continue
+      if (!p.auto) continue
+      items.push({ name: fc.name, date: String(p.date).slice(0, 10), amount: Number(p.amount) })
+    }
+  }
+  if (!items.length) return null
+  items.sort((a, b) => a.date.localeCompare(b.date))
+
+  // Costs that were due that month but never got booked — the other half of the
+  // cross-check: too few bookings is as wrong as too many.
+  const openCount = (fixedCosts || []).filter((fc) => {
+    if (fc.active === false || !fc.due_day) return false
+    return !(fc.payments || []).some((p) => (p.for || String(p.date).slice(0, 7)) === month)
+  }).length
+
+  return { month, items, total: items.reduce((a, i) => a + i.amount, 0), openCount }
 }

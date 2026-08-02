@@ -1,8 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Wallet, TrendingDown, TrendingUp, CalendarDays, ArrowRight, Sparkles, Target,
-  CalendarClock,
+  CalendarClock, ClipboardCheck, Check, Loader2,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { iconFor } from '../lib/categoryMeta'
@@ -13,7 +13,8 @@ import {
 } from '../logic/selectors'
 import { monthSavings } from '../logic/savings'
 import { generateAlerts } from '../logic/advisor'
-import { weeklyTotals, formatMonthLabel } from '../lib/dates'
+import { monthEndCheck } from '../logic/fixedSchedule'
+import { weeklyTotals, formatMonthLabel, todayISO, parseISO, formatDate } from '../lib/dates'
 import StatCard from '../components/StatCard'
 import AlertBanner from '../components/AlertBanner'
 import ProgressBar from '../components/ProgressBar'
@@ -26,6 +27,7 @@ export default function Dashboard() {
   const {
     expenses, incomes, fixedCosts, savingsContributions,
     categories, budgets, categoryMap, deleteExpense, loading,
+    fixedCheckMonth, confirmFixedCheck,
   } = useData()
 
   const spentMonth = useMemo(() => monthSpend(expenses), [expenses])
@@ -51,6 +53,13 @@ export default function Dashboard() {
   const totalSpent = useMemo(() => expenses.reduce((a, e) => a + Number(e.amount), 0), [expenses])
 
   const weekly = useMemo(() => weeklyTotals(expenses, 6), [expenses])
+
+  // Month-end reconciliation: at the turn of the month, show what the app booked
+  // by itself so it can be held against the bank statement once.
+  const check = useMemo(
+    () => monthEndCheck(fixedCosts, todayISO(), fixedCheckMonth),
+    [fixedCosts, fixedCheckMonth],
+  )
 
   const alerts = useMemo(
     () => generateAlerts({ expenses, budgets, categoryMap }),
@@ -84,6 +93,8 @@ export default function Dashboard() {
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-50 sm:text-[1.65rem]">Übersicht</h1>
         <p className="mt-1 text-sm text-zinc-400">{formatMonthLabel()} im Überblick</p>
       </div>
+
+      {check && <MonthEndCheck check={check} onConfirm={confirmFixedCheck} />}
 
       {/* Account balance (bank-style: all income − all expenses, carries forward) */}
       <section className="card mb-5 overflow-hidden bg-gradient-to-br from-ink-900 to-ink-850 p-5">
@@ -258,6 +269,78 @@ export default function Dashboard() {
         </section>
       </div>
     </div>
+  )
+}
+
+/**
+ * Month-end reconciliation prompt. Automatic booking is only trustworthy if it
+ * is checked against the real account once per month — this is that check.
+ * Confirming writes the month to budget_settings, so it clears on every device.
+ */
+function MonthEndCheck({ check, onConfirm }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const monthLabel = formatMonthLabel(parseISO(`${check.month}-01`))
+
+  async function confirm() {
+    setBusy(true)
+    setError(null)
+    try {
+      await onConfirm(check.month)
+    } catch (e) {
+      setError(e.message || 'Bestätigung fehlgeschlagen.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card mb-5 border-accent/40 bg-accent/5 p-5">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 text-accent-soft">
+          <ClipboardCheck className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-semibold text-zinc-100">Monatsabschluss {monthLabel}</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Diese Fixkosten hat die App automatisch gebucht. Vergleiche sie einmal mit
+            deinem Bankkonto — dann stimmt der Kontostand garantiert.
+          </p>
+        </div>
+      </div>
+
+      <ul className="mt-4 space-y-2 border-t border-ink-800 pt-3 text-sm">
+        {check.items.map((it, i) => (
+          <li key={`${it.name}-${it.date}-${i}`} className="flex items-center justify-between gap-3">
+            <span className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate text-zinc-200">{it.name}</span>
+              <span className="shrink-0 text-xs text-zinc-500">{formatDate(it.date)}</span>
+            </span>
+            <Money value={it.amount} className="shrink-0 tabular-nums text-zinc-300" />
+          </li>
+        ))}
+        <li className="flex items-center justify-between border-t border-ink-800 pt-2.5 font-semibold">
+          <span className="text-zinc-100">Gesamt gebucht</span>
+          <Money value={check.total} className="tabular-nums text-zinc-50" />
+        </li>
+      </ul>
+
+      {check.openCount > 0 && (
+        <p className="mt-3 text-xs text-amber-300">
+          {check.openCount === 1
+            ? '1 Fixkosten-Abbuchung wurde für diesen Monat nicht gebucht — bitte auf der Fixkosten-Seite prüfen.'
+            : `${check.openCount} Fixkosten-Abbuchungen wurden für diesen Monat nicht gebucht — bitte auf der Fixkosten-Seite prüfen.`}
+        </p>
+      )}
+      {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button onClick={confirm} disabled={busy} className="btn-primary">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Stimmt
+        </button>
+        <Link to="/fixed-costs" className="btn-ghost">Fixkosten ansehen</Link>
+      </div>
+    </section>
   )
 }
 

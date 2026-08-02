@@ -259,6 +259,19 @@ export function DataProvider({ session, children }) {
     [budgetSettings, create, update],
   )
 
+  // Last month whose automatic fixed-cost bookings the user confirmed against
+  // their bank statement ('YYYY-MM'). Stored server-side so the month-end prompt
+  // disappears on every device once it is answered on one.
+  const fixedCheckMonth = budgetSettings[0]?.fixed_check_month ?? null
+  const confirmFixedCheck = useCallback(
+    async (month) => {
+      const existing = budgetSettings[0]
+      if (existing) return update('budget_settings', existing.id, { fixed_check_month: month })
+      return create('budget_settings', { fixed_check_month: month })
+    },
+    [budgetSettings, create, update],
+  )
+
   // Quick lookup map for rendering category icon/color/name on transactions.
   const categoryMap = useMemo(() => {
     const m = new Map()
@@ -279,6 +292,7 @@ export function DataProvider({ session, children }) {
     addCategory, updateCategory, deleteCategory,
     setBudget, deleteBudget,
     plannedIncome, setPlannedIncome,
+    fixedCheckMonth, confirmFixedCheck,
   }
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

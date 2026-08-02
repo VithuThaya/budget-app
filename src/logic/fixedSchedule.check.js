@@ -2,7 +2,7 @@
 // No test framework on purpose: this is the one runnable check that fails if the
 // standing-order logic breaks (money path, so it does not go untested).
 import assert from 'node:assert/strict'
-import { shiftToBusinessDay, dueDatesUpTo, pendingFixedPayments, nextDueDate, scheduledDateFor } from './fixedSchedule.js'
+import { shiftToBusinessDay, dueDatesUpTo, pendingFixedPayments, nextDueDate, scheduledDateFor, checkableMonth, monthEndCheck } from './fixedSchedule.js'
 
 const fc = (over = {}) => ({
   id: 'x', amount: 1450, period: 'monthly', due_day: 1,
@@ -70,5 +70,28 @@ assert.equal(augPay.for, '2026-08', 'but the instalment still belongs to August'
 assert.equal(scheduledDateFor(fc({ due_day: 25 }), '2026-07'), '2026-07-24', '25 Jul 2026 is a Saturday -> Friday 24th')
 assert.equal(scheduledDateFor(fc({ due_day: 25 }), '2026-08'), '2026-08-25', 'August 25th is a Tuesday')
 assert.equal(scheduledDateFor(fc({ due_day: null }), '2026-08'), null, 'no due day, no schedule')
+
+// --- month-end check window ------------------------------------------------
+// Last day of a month and the first days of the next must name the SAME month,
+// otherwise the prompt would swap targets overnight.
+assert.equal(checkableMonth('2026-07-31'), '2026-07', 'last day of the month checks that month')
+assert.equal(checkableMonth('2026-08-03'), '2026-07', 'early next month still checks the month that closed')
+assert.equal(checkableMonth('2026-08-15'), null, 'mid-month there is nothing to confirm')
+
+// --- month-end check contents ----------------------------------------------
+const booked = [
+  fc({ id: 'a', name: 'Miete', payments: [{ date: '2026-07-01', for: '2026-07', amount: 1450, auto: true }] }),
+  // Debited 31 July but belongs to August — must NOT appear in July's check.
+  fc({ id: 'b', name: 'Abo', due_day: 1, payments: [{ date: '2026-07-31', for: '2026-08', amount: 20, auto: true }] }),
+  // Ticked by hand: the check is about what the app booked on its own.
+  fc({ id: 'c', name: 'Handy', payments: [{ date: '2026-07-05', for: '2026-07', amount: 60, auto: false }] }),
+]
+const check = monthEndCheck(booked, '2026-08-02')
+assert.deepEqual(check.items.map((i) => i.name), ['Miete'], 'only auto bookings of the closing month are listed')
+assert.equal(check.total, 1450, 'total sums the listed bookings')
+assert.equal(check.openCount, 1, 'a scheduled cost with nothing booked for July counts as open')
+assert.equal(monthEndCheck(booked, '2026-08-02', '2026-07'), null, 'a confirmed month never prompts again')
+assert.equal(monthEndCheck(booked, '2026-08-15'), null, 'outside the window there is no prompt')
+assert.equal(monthEndCheck([fc({ payments: [] })], '2026-08-02'), null, 'nothing booked, nothing to confirm')
 
 console.log('fixedSchedule: all checks passed')
